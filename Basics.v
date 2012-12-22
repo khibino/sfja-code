@@ -772,7 +772,7 @@ Proof.
   induction n as [| n'].
   Case "n = 0". reflexivity.
   Case "n = S n'".
-    simpl. rewrite <- IHn'. reflexivity.
+    simpl. rewrite <- IHn'. reflexivity. Qed.
 
 (*
 簡約の時点でデータコンストラクタの区別で判定できる。
