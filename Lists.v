@@ -872,7 +872,29 @@ Qed.
  *)
 
 (*
-証明: ☐
+証明: n についての帰納法を適用する。
+   □ まず n = 0 と置くと以下のようになる
+        forall m, beq_nat 0 m = beq_nat m 0
+        m = 0 のとき
+          beq_nat 0 0 = beq_nat 0 0 で成り立つ
+        m = S m' のとき
+          beq_nat の定義から、
+          beq_nat 0 (S m') = false = beq_nat (S m') 0
+          で成り立つ
+   □ 次に n = S n' と置き、帰納法の仮定を
+        forall m, beq_nat n' m = beq_nat m n'
+        とすると、
+
+        m = 0 のとき
+          beq_nat (S n') 0 = false = beq_nat 0 (S n')
+          で成り立つ
+        m = S m' のとき、forall m に注意すると帰納法の仮定から
+          beq_nat n' m' = beq_nat m' n'
+        も成り立つ。
+        これを beq_nat の定義から逆変換すると
+          beq_nat (S n') (S m') = beq_nat (S m') (S n')
+
+        これは n = S n ' についても帰納法の仮定が成り立つことを示している ☐
  *)
 
 End NatLists.
