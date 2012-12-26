@@ -1,7 +1,7 @@
 
 Require Export Basics.
 
-Module NatLists.
+Module NatList.
 
 Inductive natprod : Type :=
   pair : nat -> nat -> natprod.
@@ -897,51 +897,55 @@ Qed.
         これは n = S n ' についても帰納法の仮定が成り立つことを示している ☐
  *)
 
-End NatLists.
+End NatList.
 
-(*
-練習問題: 辞書
+(* 練習問題: 辞書 *)
 
 Module Dictionary.
 
 Inductive dictionary : Type :=
   | empty : dictionary
-  | record : nat → nat → dictionary → dictionary.
+  | record : nat -> nat -> dictionary -> dictionary.
 
+(*
 この宣言は次のように読めます。「dictionary を構成する方法はふたつある。構
 成子 empty で空の辞書を表現するか、構成子 record をキーと値と既存の
 dictionary に適用してキーと値の対応を追加した dictionary を構成するかのい
 ずれかである」。
+ *)
 
 Definition insert (key value : nat) (d : dictionary) : dictionary :=
   (record key value d).
 
+(*
 下の find 関数は、 dictionary から与えられたキーに対応する値を探し出すも
 のです。キーが見つからなかった場合には None に評価され、キーが val に結び
 付けられていた場合には Some val に評価されます。同じキーが複数の値に結び
 付けられている場合には、最初に見つかったほうの値を返します。
+ *)
 
 Fixpoint find (key : nat) (d : dictionary) : option nat :=
   match d with
-  | empty => None
-  | record k v d' => if (beq_nat key k) then (Some v) else (find key d')
+    | empty => None
+    | record k v d' => if (beq_nat key k) then (Some v) else (find key d')
   end.
 
-練習問題: ★ (dictionary_invariant1)
+(* 練習問題: ★ (dictionary_invariant1) *)
 
-Theorem dictionary_invariant1 : ∀ (d : dictionary) (k v: nat),
+Theorem dictionary_invariant1 : forall (d : dictionary) (k v: nat),
   (find k (insert k v d)) = Some v.
 Proof.
-Admitted.
-☐
+  intros d k v. simpl. rewrite <- beq_nat_refl. reflexivity. Qed.
+(* ☐ *)
 
-練習問題: ★ (dictionary_invariant2)
+(* 練習問題: ★ (dictionary_invariant2) *)
 
-Theorem dictionary_invariant2 : ∀ (d : dictionary) (m n o: nat),
-  (beq_nat m n) = false → (find m d) = (find m (insert n o d)).
+Theorem dictionary_invariant2 : forall (d : dictionary) (m n o: nat),
+  (beq_nat m n) = false -> (find m d) = (find m (insert n o d)).
 Proof.
-Admitted.
-☐
+  intros d m n o H. simpl. rewrite -> H. reflexivity. Qed.
+(* ☐ *)
 
 End Dictionary.
- *)
+
+Definition beq_nat_sym := NatList.beq_nat_sym.
