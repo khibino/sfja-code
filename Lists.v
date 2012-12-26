@@ -576,21 +576,350 @@ Module PlayGroundRevInjective.
 
 Require Import List.
 
-(* Check rev. *)
+Lemma rev_snoc :
+  forall X (l : list X) (x : X), rev (l ++ x :: nil) = x :: rev l.
+Proof.
+  intros X l x. induction l as [| x' l'].
+  Case "l = nil". reflexivity.
+  Case "l = x' :: l'".
+    simpl. rewrite -> IHl'. reflexivity. Qed.
 
+Lemma rev_involutive' :
+  forall X (l : list X), rev (rev l) = l.
+Proof.
+  intros X l. induction l as [| x l'].
+  Case "l = nil". reflexivity.
+  Case "l = cons x l'".
+    simpl. rewrite -> rev_snoc. rewrite -> IHl'. reflexivity. Qed.
+
+(* TODO - unresolved *)
 Theorem rev_injective :
   forall X (l1 l2 : list X), rev l1 = rev l2 -> l1 = l2.
-Proof. Admitted.
-  (*
-  intros X l1 l2.
-  induction l1 as [| x l1'] _eqn: IH1. induction l2 as [| y l2'] _eqn: IH2.
-  Case "l1 = nil, l2 = nil". reflexivity.
-  Case "l1 = nil, l2 = cons y l2'".
-*)
+Proof.
+  intros X l1 l2 H.
+  rewrite <- rev_involutive'.
+  rewrite <- H.
+  rewrite -> rev_involutive'.
+  reflexivity.
+Qed.
 
 (* ☐ *)
 End PlayGroundRevInjective.
 
+Inductive natoption : Type :=
+  | Some : nat -> natoption
+  | None : natoption.
 
+
+Fixpoint index_bad (n:nat) (l:natlist) : nat :=
+  match l with
+    | nil => 42
+    | a :: l' => match beq_nat n O with
+                   | true => a
+                   | false => index_bad (pred n) l'
+                 end
+  end.
+
+Fixpoint index (n:nat) (l:natlist) : natoption :=
+  match l with
+    | nil => None
+    | a :: l' => match beq_nat n O with
+                   | true => Some a
+                   | false => index (pred n) l'
+                 end
+  end.
+
+
+Example test_index1 : index 0 [4,5,6,7] = Some 4.
+Proof. reflexivity. Qed.
+Example test_index2 : index 3 [4,5,6,7] = Some 7.
+Proof. reflexivity. Qed.
+Example test_index3 : index 10 [4,5,6,7] = None.
+Proof. reflexivity. Qed.
+
+Fixpoint index' (n:nat) (l:natlist) : natoption :=
+  match l with
+    | nil => None
+    | a :: l' => if beq_nat n O then Some a else index (pred n) l'
+  end.
+
+Definition option_elim (o : natoption) (d : nat) : nat :=
+  match o with
+    | Some n' => n'
+    | None => d
+  end.
+
+(*
+練習問題: ★★ (hd_opt)
+
+同じ考え方を使って、以前定義した hd 関数を修正し、 nil の場合に返す値を渡
+さなくて済むようにしなさい。
+ *)
+
+Definition hd_opt (l : natlist) : natoption :=
+  match l with
+    | x :: xs => Some x
+    | [ ]     => None
+  end.
+
+Example test_hd_opt1 : hd_opt [] = None.
+Proof. reflexivity. Qed.
+
+Example test_hd_opt2 : hd_opt [1] = Some 1.
+Proof. reflexivity. Qed.
+
+Example test_hd_opt3 : hd_opt [5,6] = Some 5.
+Proof. reflexivity. Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★, optional (option_elim_hd)
+
+新しい hd_opt と古い hd の関係についての練習問題です。
+ *)
+
+Theorem option_elim_hd : forall (l:natlist) (default:nat),
+  hd default l = option_elim (hd_opt l) default.
+Proof.
+  intros l default. destruct l as [| x xs].
+  Case "l = nil". reflexivity.
+  Case "l = case x xs". reflexivity. Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★, recommended (beq_natlist)
+
+数のリストふたつを比較し等価性を判定する関数 beq_natlist の定義を完成させ
+なさい。そして、 beq_natlist l l が任意のリスト l で true となることを証
+明しなさい。
+ *)
+
+Fixpoint beq_natlist (l1 l2 : natlist) : bool :=
+  match l1, l2 with
+    | x1 :: l1', x2 :: l2' =>
+        match beq_nat x1 x2 with
+          | true  => beq_natlist l1' l2'
+          | false => false
+        end
+    | [ ], [ ]             => true
+    | _ :: _ , [ ]         => false
+    | [ ] , _ :: _         => false
+  end.
+
+Example test_beq_natlist1 : (beq_natlist nil nil = true).
+Proof. reflexivity. Qed.
+Example test_beq_natlist2 : beq_natlist [1,2,3] [1,2,3] = true.
+Proof. reflexivity. Qed.
+Example test_beq_natlist3 : beq_natlist [1,2,3] [1,2,4] = false.
+Proof. reflexivity. Qed.
+
+Theorem beq_natlist_refl :
+  forall l:natlist, true = beq_natlist l l.
+Proof.
+  intros l. induction l as [|n l'].
+  Case "l = nil". reflexivity.
+  Case "l = cons n l'".
+    simpl. rewrite <- beq_nat_refl. rewrite <- IHl'.
+    reflexivity. Qed.
+(* ☐ *)
+
+Theorem silly1 :
+  forall (n m o p : nat),
+    n = m ->
+    [n,o] = [n,p] ->
+    [n,o] = [m,p].
+Proof.
+  intros n m o p eq1 eq2.
+  rewrite <- eq1.
+  apply eq2. Qed.
+
+Theorem silly2 :
+  forall (n m o p : nat),
+    n = m ->
+    (forall (q r : nat), q = r -> [q,o] = [r,p]) ->
+    [n,o] = [m,p].
+Proof.
+  intros n m o p eq1 eq2.
+  apply eq2. apply eq1. Qed.
+
+(*
+Theorem silly2' :
+  forall (n m o p : nat),
+    n = m ->
+    (forall (q r : nat), q = r -> [q,o] = [r,p]) ->
+    [n,o] = [m,p].
+Proof.
+  intros n m o p eq1 eq2.
+  rewrite <- eq1.
+Admitted.
+ *)
+
+Theorem silly2a :
+  forall (n m : nat),
+    (n, n) = (m, m) ->
+    (forall (q r : nat), (q, q) = (r, r) -> [q] = [r]) ->
+    [n] = [m].
+Proof.
+  intros n m eq1 eq2.
+  apply eq2. apply eq1. Qed.
+
+(*
+練習問題: ★★, optional (silly_ex)
+
+次の証明を simpl を使わずに完成させなさい。
+ *)
+
+Theorem silly_ex :
+  (forall n, evenb n = true -> oddb (S n) = true) ->
+  evenb 3 = true ->
+  oddb 4 = true.
+Proof.
+  intros H0 H1. apply H0. apply H1. Qed.
+(* ☐ *)
+
+
+Theorem silly3_firsttry :
+  forall (n : nat),
+    true = beq_nat n 5 ->
+    beq_nat (S (S n)) 7 = true.
+Proof.
+  intros n H.
+  simpl.
+Admitted.
+
+Theorem silly3 :
+  forall (n : nat),
+    true = beq_nat n 5 ->
+    beq_nat (S (S n)) 7 = true.
+Proof.
+  intros n H.
+  symmetry.
+  simpl. apply H. Qed.
+
+
+(* 練習問題: ★★★, recommended (apply_exercise1) *)
+
+Theorem rev_exercise1 :
+  forall (l l' : natlist),
+    l = rev l' ->
+    l' = rev l.
+Proof.
+  intros l l' H. rewrite -> H. symmetry. apply rev_involutive. Qed.
+(* ☐ *)
+
+(*
+練習問題: ★ (apply_rewrite)
+
+apply と rewrite の違いを簡単に説明しなさい。どちらもうまく使えるような場
+面はありますか？
+ *)
+
+(*
+結果の型が一致しているときに使えるのが apply。
+equalityが示せているときに使えるのが rewrite。
+結果の型がequalityであるときにはどちらも使える場合がある。
+ *)
+(* ☐ *)
+
+(*
+練習問題: ★★, optional (app_ass')
+
+++ の結合則をより一般的な仮定のもとで証明しなさい。（最初の行を変更せずに
+）次の証明を完成させること。
+ *)
+
+Theorem app_ass' :
+  forall l1 l2 l3 : natlist, (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
+Proof.
+  intros l1. induction l1 as [ | n l1'].
+  Case "l = nil". reflexivity.
+  Case "l = cons n l1'".
+    simpl. intros l2 l3.
+    rewrite -> IHl1'. reflexivity. Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★★ (apply_exercise2)
+
+induction の前に m を intros していないことに注意してください。これによっ
+て仮定が一般化され、帰納法の仮定が特定の m に縛られることがなくなり、より
+使いやすくなりました。
+ *)
+
+Theorem beq_nat_sym : forall (n m : nat),
+  beq_nat n m = beq_nat m n.
+Proof.
+  intros n. induction n as [| n'].
+  Case "n = 0".
+    destruct m as [| m'].
+    SCase "m = 0". reflexivity.
+    SCase "m = S m'". reflexivity.
+  Case "n = S n'".
+    intros m.
+    destruct m as [| m'].
+      SCase "m = 0". reflexivity.
+      SCase "m = S m'".
+        simpl. apply IHn'.
+Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★★, recommended (beq_nat_sym_informal)
+
+以下の補題について上の証明と対応する非形式的な証明を書きなさい。
+
+定理: 任意の nat n m について、 beq_nat n m = beq_nat m n。
+ *)
+
+(*
+証明: ☐
+ *)
 
 End NatLists.
+
+(*
+練習問題: 辞書
+
+Module Dictionary.
+
+Inductive dictionary : Type :=
+  | empty : dictionary
+  | record : nat → nat → dictionary → dictionary.
+
+この宣言は次のように読めます。「dictionary を構成する方法はふたつある。構
+成子 empty で空の辞書を表現するか、構成子 record をキーと値と既存の
+dictionary に適用してキーと値の対応を追加した dictionary を構成するかのい
+ずれかである」。
+
+Definition insert (key value : nat) (d : dictionary) : dictionary :=
+  (record key value d).
+
+下の find 関数は、 dictionary から与えられたキーに対応する値を探し出すも
+のです。キーが見つからなかった場合には None に評価され、キーが val に結び
+付けられていた場合には Some val に評価されます。同じキーが複数の値に結び
+付けられている場合には、最初に見つかったほうの値を返します。
+
+Fixpoint find (key : nat) (d : dictionary) : option nat :=
+  match d with
+  | empty => None
+  | record k v d' => if (beq_nat key k) then (Some v) else (find key d')
+  end.
+
+練習問題: ★ (dictionary_invariant1)
+
+Theorem dictionary_invariant1 : ∀ (d : dictionary) (k v: nat),
+  (find k (insert k v d)) = Some v.
+Proof.
+Admitted.
+☐
+
+練習問題: ★ (dictionary_invariant2)
+
+Theorem dictionary_invariant2 : ∀ (d : dictionary) (m n o: nat),
+  (beq_nat m n) = false → (find m d) = (find m (insert n o d)).
+Proof.
+Admitted.
+☐
+
+End Dictionary.
+ *)
