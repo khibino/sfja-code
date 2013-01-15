@@ -229,6 +229,10 @@ Fixpoint split {X Y : Type} (ps : list (X*Y)) : list X * list Y :=
           | (xs, ys) => (x :: xs, y :: ys)
         end
   end.
+
+Example test_split :
+split [(1,false), (2,false)] = ([1,2], [false,false]).
+Proof. reflexivity. Qed.
 (* ☐ *)
 
 
@@ -244,7 +248,7 @@ Implicit Arguments None [[X]].
 Fixpoint index {X : Type} (n : nat) (l : list X) : option X :=
   match l with
     | [] => None
-    | a :: l' => if beq_nat n O then Some a else index (pred n) l'
+   | a :: l' => if beq_nat n O then Some a else index (pred n) l'
   end.
 
 Example test_index1 : index 0 [4,5,6,7] = Some 4.
@@ -602,3 +606,426 @@ Definition constfun {X : Type} (x: X) : nat -> X :=
 
 Definition ftrue := constfun true.
 
+Example constfun_example1 : ftrue 0 = true.
+Proof. reflexivity. Qed.
+
+Example constfun_example2 : (constfun 5) 99 = 5.
+Proof. reflexivity. Qed.
+
+Definition override {X: Type} (f: nat -> X) (k:nat) (x:X) : nat -> X :=
+  fun (k':nat) => if beq_nat k k' then x else f k'.
+
+Definition fmostlytrue := override (override ftrue 1 false) 3 false.
+
+Example override_example1 : fmostlytrue 0 = true.
+Proof. reflexivity. Qed.
+
+Example override_example2 : fmostlytrue 1 = false.
+Proof. reflexivity. Qed.
+
+Example override_example3 : fmostlytrue 2 = true.
+Proof. reflexivity. Qed.
+
+Example override_example4 : fmostlytrue 3 = false.
+Proof. reflexivity. Qed.
+
+
+(*
+練習問題: ★ (override_example)
+
+次の証明にとりかかる前に、あなたがこの証明の意味することを理解し
+ているか確認するため、証明内容を別の言葉で言い換えてください。証
+明自体は単純なものです。
+ *)
+
+Theorem override_example : forall (b:bool),
+  (override (constfun b) 3 true) 2 = b.
+Proof. reflexivity. Qed.
+(* ☐ *)
+
+(*
+forall b : bool, override (constfun b) 3 true
+は 3 を渡したときにtrue を返し、
+それ以外を渡したときに b を返す関数である。
+この関数に 2 を渡したときには b が返ることを証明する。
+ *)
+
+
+(* さらにCoqについて *)
+
+(* unfoldタクティック *)
+
+Theorem unfold_example_bad :
+  forall m n, 3 + n = m -> plus3 n + 1 = m + 1.
+Proof.
+  intros m n H.
+  Admitted.
+
+Theorem unfold_example :
+  forall m n, 3 + n = m -> plus3 n + 1 = m + 1.
+Proof.
+  intros m n H.
+  unfold plus3.
+  rewrite -> H.
+  reflexivity. Qed.
+
+Theorem override_eq :
+  forall {X:Type} x k (f:nat -> X), (override f k x) k = x.
+Proof.
+  intros X x k f.
+  unfold override.
+  rewrite <- beq_nat_refl.
+  reflexivity. Qed.
+
+
+(* 練習問題: ★★ (override_neq) *)
+
+Theorem override_neq :
+  forall {X:Type} x1 x2 k1 k2 (f : nat -> X),
+    f k1 = x1 ->
+    beq_nat k2 k1 = false ->
+    (override f k2 x2) k1 = x1.
+Proof.
+  intros X x1 x2 k1 k2 f H0 H1.
+  unfold override. rewrite -> H1.
+  apply H0.
+Qed.
+(* ☐ *)
+
+Theorem eq_add_S :
+  forall (n m : nat), S n = S m -> n = m.
+Proof.
+  intros n m eq. inversion eq. reflexivity. Qed.
+
+Theorem silly4 :
+  forall (n m : nat), [n] = [m] -> n = m.
+Proof.
+  intros n o eq. inversion eq. reflexivity. Qed.
+
+Theorem silly5 :
+  forall (n m o : nat), [n,m] = [o,o] -> [n] = [m].
+Proof.
+  intros n m o eq. inversion eq. reflexivity. Qed.
+
+
+(* 練習問題: ★ (sillyex1) *)
+
+Example sillyex1 :
+forall (X : Type) (x y z : X) (l j : list X),
+  x :: y :: l = z :: j ->
+  y :: l = x :: j ->
+  x = y.
+Proof.
+  intros X x y z l j eq0 eq1.
+  inversion eq0.
+  inversion eq1.
+  rewrite <- H0.
+  reflexivity.
+Qed.
+(* ☐ *)
+
+Theorem silly6 :
+  forall (n : nat), S n = O -> 2 + 2 = 5.
+Proof.
+  intros n contra. inversion contra. Qed.
+
+Theorem silly7 :
+  forall (n m : nat), false = true -> [n] = [m].
+Proof.
+  intros n m contra. inversion contra. Qed.
+
+
+(* 練習問題: ★ (sillyex2) *)
+
+Example sillyex2 :
+forall (X : Type) (x y z : X) (l j : list X),
+  x :: y :: l = [] ->
+  y :: l = z :: j ->
+  x = z.
+Proof.
+  intros X x y z l j contra eq.
+  inversion contra.
+Qed.
+(* ☐ *)
+
+Lemma eq_remove_S :
+  forall n m, n = m -> S n = S m.
+Proof. intros n m eq. rewrite -> eq. reflexivity. Qed.
+
+Theorem beq_nat_eq :
+  forall n m, true = beq_nat n m -> n = m.
+Proof.
+  intros n. induction n as [| n'].
+  Case "n = 0".
+    intros m. destruct m as [| m'].
+    SCase "m = 0". reflexivity.
+    SCase "m = S m'". simpl. intros contra. inversion contra.
+  Case "n = S n'".
+    intros m. destruct m as [| m'].
+    SCase "m = 0". simpl. intros contra. inversion contra.
+    SCase "m = S m'". simpl. intros H.
+    apply eq_remove_S. apply IHn'. apply H. Qed.
+
+
+(*
+練習問題: ★★ (beq_nat_eq_informal)
+
+beq_nat_eqの、非形式的な証明を示しなさい。
+ *)
+
+(*
+forall n m, true = beq_nat n m -> n = m.
+任意の自然数 n m について、
+beq_nat n m = true ならば n = m であることを示す
+
+自然数 n についての帰納法を適用する
+- n = 0 のとき
+  m = 0 ならば beq_nat 0 0 は true で 0 = 0 なので成立
+  m = S m' ならば beq_nat 0 m は false で前提が成立しないので成立
+- n = S n' のとき
+  m = 0 ならば beq_nat (S n') 0 は false で前提が成立しないので成立
+  m = S m' ならば
+     beq_nat (S n') (S m') = beq_nat n' m'
+     また、帰納法の仮定から、
+     全ての m について beq_nat n' m ならば n' = m
+     つまり m' についても beq_nat n' m' ならば n' = m'
+     n' = m' のときには S n' = S m'
+     つまり
+     beq_nat (S n') (S m') ならば S n' = S m' が成立。
+     これは n = S n' のときにも帰納法の仮定が成立することを示している。
+ *)
+
+(* ☐ *)
+
+(*
+練習問題: ★★★ (beq_nat_eq')
+
+beq_nat_eqは、mについて帰納法をつかうことで証明すること
+ができました。しかし我々は、もう少し変数を導入する順序に
+注意を払うべきです。なぜなら、我々は一般に、十分な帰納法
+の仮定を得ているからです。このことを次に示します。次の証
+明を完成させなさい。この練習問題の効果を最大にするため、
+とりあえずは先にやった証明を見ないで取り組んでください。
+ *)
+
+Theorem beq_nat_eq' :
+  forall m n, beq_nat n m = true -> n = m.
+Proof.
+  intros m. induction m as [| m'].
+  (* m = 0 *)
+    destruct n as [| n'].
+    (* n = 0 *) intros H0. reflexivity.
+    (* n = S n' *) simpl. intros contra. inversion contra.
+  (* m = S m' *)
+    destruct n as [| n'].
+    (* n = 0 *) simpl. intros contra. inversion contra.
+    (* n = S n' *)
+      simpl. intro H0.
+      apply eq_remove_S.
+      apply (IHm' n' H0).
+Qed.
+(* ☐ *)
+
+
+Theorem length_snoc' :
+  forall (X : Type) (v : X) (l : list X) (n : nat),
+    length l = n ->
+    length (snoc l v) = S n.
+Proof.
+  intros X v l. induction l as [| v' l'].
+  Case "l = []". intros n eq. rewrite <- eq. reflexivity.
+  Case "l = v' :: l'". intros n eq. simpl. destruct n as [| n'].
+    SCase "n = 0". inversion eq.
+    SCase "n = S n'".
+      apply eq_remove_S. apply IHl'. inversion eq. reflexivity.
+Qed.
+
+(*
+練習問題: ★★, optional (practice)
+
+同じところに分類され、相互に関連するような、自明でもないが複雑と
+いうほどでもない証明をいくつか練習問題としましょう。このうち、い
+くつかは過去のレクチャーや練習問題に出てきた補題を使用します。
+ *)
+
+Theorem beq_nat_0_l : forall n,
+  true = beq_nat 0 n -> 0 = n.
+Proof.
+  intros n H.
+  destruct n as [| n'].
+    reflexivity.
+    inversion H.
+Qed.
+
+Theorem beq_nat_0_l' : forall n,
+  true = beq_nat 0 n -> 0 = n.
+Proof.
+  apply beq_nat_eq.
+Qed.
+
+Theorem beq_nat_0_r : forall n,
+  true = beq_nat n 0 -> 0 = n.
+Proof.
+  intros n H.
+  destruct n as [| n'].
+    reflexivity.
+    inversion H.
+Qed.
+
+Theorem beq_nat_0_r' : forall n,
+  true = beq_nat n 0 -> 0 = n.
+Proof.
+  symmetry.
+  apply (beq_nat_eq n 0 H).
+Qed.
+(* ☐ *)
+
+
+Theorem double_injecitve :
+  forall n m, double n = double m -> n = m.
+Proof.
+  intros n. induction n as [| n'].
+  Case "n = 0". simpl. intros m eq. destruct m as [| m'].
+    SCase "m = 0". reflexivity.
+    SCase "m = S m'". inversion eq.
+  Case "n = S n'". intros m eq. destruct m as [| m'].
+    SCase "m = 0". inversion eq.
+    SCase "m = S m'".
+      apply eq_remove_S. apply IHn'. inversion eq. reflexivity.
+Qed.
+
+
+(* タクティックを仮定に使用する *)
+
+Theorem S_inj :
+  forall (n m : nat) (b : bool), beq_nat (S n) (S m) = b -> beq_nat n m = b.
+Proof.
+  intros n m b H. simpl in H. apply H. Qed.
+
+Theorem silly3' :
+  forall (n : nat),
+    (beq_nat n 5 = true -> beq_nat (S (S n)) 7 = true) ->
+    true = beq_nat n 5 ->
+    true = beq_nat (S (S n)) 7.
+Proof.
+  intros n eq H.
+  symmetry in H. apply eq in H. symmetry in H.
+  apply H. Qed.
+
+
+(*
+練習問題: ★★★, recommended (plus_n_n_injective)
+
+先に述べた"in"を使って次の証明をしなさい。
+ *)
+
+Theorem plus_n_n_injective :
+  forall n m, n + n = m + m -> n = m.
+Proof.
+  intros n. induction n as [| n'].
+  Case "n = 0".
+    destruct m as [| m'].
+      reflexivity.
+
+      intros H. inversion H.
+  Case "n = S n'".
+    intros m H.
+    destruct m as [| m'].
+      inversion H.
+
+      rewrite <- plus_n_Sm in H. rewrite <- plus_n_Sm in H.
+      simpl in H. inversion H.
+
+      apply eq_remove_S. apply IHn'.
+      apply H1.
+Qed.
+(* ☐ *)
+
+
+Definition sillyfun (n : nat) : bool :=
+  if beq_nat n 3 then false
+  else if beq_nat n 5 then false
+  else false.
+
+Theorem sillyfun_false :
+  forall (n : nat), sillyfun n = false.
+Proof.
+  intros n. unfold sillyfun.
+  destruct (beq_nat n 3).
+    Case "beq_nat n 3 = true". reflexivity.
+    Case "beq_nat n 5 = false". destruct (beq_nat n 5).
+      SCase "beq_nat n 5 = true". reflexivity.
+      SCase "beq_nat n 5 = false". reflexivity. Qed.
+
+
+(* 練習問題: ★ (override_shadow) *)
+
+Theorem override_shadow :
+  forall {X:Type} x1 x2 k1 k2 (f : nat -> X),
+    (override (override f k1 x2) k1 x1) k2 = (override f k1 x1) k2.
+Proof.
+  unfold override.
+  intros X x1 x2 k1 k2.
+  destruct (beq_nat k1 k2).
+  reflexivity. reflexivity.
+ Qed.
+(* ☐ *)
+
+(* 練習問題: ★★★, recommended (combine_split) *)
+
+Theorem combine_split :
+  forall X Y (l : list (X * Y)) l1 l2,
+    split l = (l1, l2) -> combine l1 l2 = l.
+Proof.
+  intros X Y l. induction l as [ | [x y] l'].
+  Case "l = []".
+    intros l1 l2 H.
+    inversion H.
+    reflexivity.
+  Case "l = [x y] :: l'".
+    intros l1 l2 H.
+    simpl in H.
+    destruct (split l') as [ xs ys ].
+    inversion H.
+    simpl.
+    rewrite -> (IHl' xs ys (eq_refl (xs, ys))).
+    reflexivity.
+Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★★, optional (split_combine)
+
+思考練習: 我々はすでに、全ての型のリストのペアでcombineがsplitの
+逆関数であることを証明しました。ではその逆の「splitはcombineの逆
+関数である」を示すことはできるでしょうか？
+
+ヒント: split combine l1 l2 = (l1,l2)がtrueとなるl1、l2の条件は
+何でしょう？
+
+この定理をCoqで証明しなさい（なるべくintrosを使うタイミングを遅
+らせ、帰納法の仮定を一般化させておくといいでしょう。
+ *)
+
+Theorem split_combine :
+  forall X Y (l1 : list X) (l2 : list Y),
+    length l1 = length l2 -> split (combine l1 l2) = (l1, l2).
+Proof.
+  induction l1 as [| x l1'].
+  (* l1 = [] *)
+    destruct l2 as [| y l2'].
+    (* l2 = [] *) reflexivity.
+    (* l2 = y :: l2' *)
+      simpl. intro H. inversion H.
+  (* l1 = x :: l1' *)
+    intros l2 H.
+    destruct l2 as [| y l2'].
+      (* l2 = [] *) inversion H.
+      (* l2 = y :: l2' *)
+         simpl.
+         rewrite -> (IHl1' l2').
+         reflexivity.
+         simpl in H. inversion H.
+         reflexivity.
+Qed.
+(* ☐ *)
