@@ -1029,3 +1029,477 @@ Proof.
          reflexivity.
 Qed.
 (* ☐ *)
+
+
+(* rememberタクティック *)
+Definition sillyfun1 (n : nat) : bool :=
+  if beq_nat n 3 then true
+  else if beq_nat n 5 then true
+       else false.
+
+Theorem sillyfun1_odd_FAILED :
+  forall (n : nat),
+    sillyfun1 n = true ->
+    oddb n = true.
+Proof.
+  intros n eq. unfold sillyfun1 in eq.
+  destruct (beq_nat n 3).
+Admitted.
+
+Theorem sillyfun1_odd :
+  forall (n : nat),
+    sillyfun1 n = true ->
+    oddb n = true.
+Proof.
+  intros n eq. unfold sillyfun1 in eq.
+  remember (beq_nat n 3) as e3.
+  destruct e3.
+    Case "e3 = true". apply beq_nat_eq in Heqe3.
+      rewrite -> Heqe3. reflexivity.
+    Case "e3 = false".
+      remember (beq_nat n 5) as e5. destruct e5.
+        SCase "e5 = true".
+          apply beq_nat_eq in Heqe5.
+          rewrite -> Heqe5. reflexivity.
+        SCase "e5 = false".
+          inversion eq. Qed.
+
+(* destruct ... as ... _eqn: ... による別解 *)
+Theorem sillyfun1_odd' :
+  forall (n : nat),
+    sillyfun1 n = true ->
+    oddb n = true.
+Proof.
+  intros n eq. unfold sillyfun1 in eq.
+  destruct (beq_nat n 3) as [|] _eqn: Heqe3.
+    Case "beq_nat n 3 = true".
+      (* rewrite -> (beq_nat_eq n 3 (eq_sym Heqe3)). *)
+      symmetry in Heqe3. apply beq_nat_eq in Heqe3.
+      rewrite -> Heqe3. reflexivity.
+    Case "beq_nat n 3 = false".
+      destruct (beq_nat n 5) as [|] _eqn: Heqe5.
+        SCase "beq_nat n 5 = true".
+          symmetry in Heqe5. apply beq_nat_eq in Heqe5.
+          rewrite -> Heqe5. reflexivity.
+        SCase "beq_nat n 5 = false".
+          inversion eq. Qed.
+
+
+(* 練習問題: ★★ (override_same) *)
+
+Theorem override_same :
+  forall {X:Type} x1 k1 k2 (f : nat -> X),
+  f k1 = x1 ->
+  (override f k1 x1) k2 = f k2.
+Proof.
+  intros X x1 k1 k2 f eq.
+  unfold override.
+  remember (beq_nat k1 k2) as d12.
+  destruct d12.
+  (* d12 = true *)
+    apply beq_nat_eq in Heqd12.
+    rewrite <- Heqd12. rewrite -> eq.
+    reflexivity.
+  (* d12 = false *) reflexivity.
+Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★★, optional (filter_exercise)
+
+この問題はやや難しいかもしれません。最初にintrosを使うと、帰納法
+を適用するための変数まで上に上げてしまうので気をつけてください。
+ *)
+
+Theorem filter_exercise :
+  forall (X : Type) (test : X -> bool) (x : X) (l lf : list X),
+    filter test l = x :: lf ->
+    test x = true.
+Proof.
+  induction l as [| x' l'].
+  (* l = [] *) simpl. intros lf eq. inversion eq.
+  (* l = x' :: l' *)
+    simpl. remember (test x') as tx'.
+    destruct tx'.
+    (* tx' = true *)
+      intros lf eq. inversion eq.
+      rewrite <- H0. rewrite <- Heqtx'.
+      reflexivity.
+    (* tx' = false *) apply IHl'.
+Qed.
+(* ☐ *)
+
+
+(* apply ... with ...タクティック *)
+
+Example trans_eq_example :
+forall (a b c d e f : nat),
+  [a,b] = [c,d] ->
+  [c,d] = [e,f] ->
+  [a,b] = [e,f].
+Proof.
+  intros a b c d e f eq1 eq2.
+  rewrite -> eq1. rewrite -> eq2. reflexivity. Qed.
+
+Theorem trans_eq :
+  forall {X:Type} (n m o : X),
+    n = m -> m = o -> n = o.
+Proof.
+  intros X n m o eq1 eq2. rewrite -> eq1. rewrite -> eq2.
+  reflexivity. Qed.
+
+Example trans_eq_example' :
+forall (a b c d e f : nat),
+  [a,b] = [c,d] ->
+  [c,d] = [e,f] ->
+  [a,b] = [e,f].
+Proof.
+  intros a b c d e f eq1 eq2.
+  apply trans_eq with (m:=[c,d]). apply eq1. apply eq2. Qed.
+
+Example trans_eq_example'' :
+forall (a b c d e f : nat),
+  [a,b] = [c,d] ->
+  [c,d] = [e,f] ->
+  [a,b] = [e,f].
+Proof.
+  intros a b c d e f eq1 eq2.
+  apply trans_eq with [c,d]. apply eq1. apply eq2. Qed.
+
+Example trans_eq_example''' :
+forall (a b c d e f : nat),
+  [a,b] = [c,d] ->
+  [c,d] = [e,f] ->
+  [a,b] = [e,f].
+Proof.
+  intros a b c d e f.
+  apply (trans_eq [a,b] [c,d]). Qed.
+
+
+(* 練習問題: ★★★, recommended (apply_exercises) *)
+
+Example trans_eq_exercise : forall (n m o p : nat),
+     m = (minustwo o) ->
+     (n + p) = m ->
+     (n + p) = (minustwo o).
+Proof.
+  intros n m o p eq1 eq2.
+  apply (trans_eq (n + p) m). apply eq2. apply eq1. Qed.
+
+Theorem beq_nat_trans : forall n m p,
+  true = beq_nat n m ->
+  true = beq_nat m p ->
+  true = beq_nat n p.
+Proof.
+  intros n m p eq1 eq2.
+  apply beq_nat_eq in eq1. apply beq_nat_eq in eq2.
+  rewrite -> (trans_eq n m p eq1 eq2).
+  apply beq_nat_refl.
+Qed.
+
+Theorem override_permute :
+  forall {X:Type} x1 x2 k1 k2 k3 (f : nat -> X),
+  false = beq_nat k2 k1 ->
+  (override (override f k2 x2) k1 x1) k3 =
+  (override (override f k1 x1) k2 x2) k3.
+Proof.
+  intros.
+  unfold override.
+  destruct (beq_nat k1 k3) as [|] _eqn: Hd13.
+  (* Hd13 = true *)
+    symmetry in Hd13. apply beq_nat_eq in Hd13.
+    destruct (beq_nat k2 k3) as [|] _eqn: Hd23.
+    (* Hd23 = true *)
+      symmetry in Hd23. apply beq_nat_eq in Hd23.
+      rewrite -> Hd13 in H. rewrite -> Hd23 in H.
+      rewrite <- beq_nat_refl in H.
+      inversion H.
+    (* Hd23 = false *) reflexivity.
+  (* Hd13 = false *) reflexivity.
+Qed.
+(* ☐ *)
+
+
+(* まとめ *)
+
+(* さらなる練習問題 *)
+
+(*
+練習問題: ★★, optional (fold_length)
+
+リストに関する多くの一般的な関数はfoldを使って書きなおすることが
+できます。例えば、次に示すのはlengthの別な実装です。
+ *)
+
+Definition fold_length {X : Type} (l : list X) : nat :=
+  fold (fun _ n => S n) l 0.
+
+Example test_fold_length1 : fold_length [4,7,0] = 3.
+Proof. reflexivity. Qed.
+
+(* fold_lengthが正しいことを証明しなさい。 *)
+
+Theorem fold_length_correct : forall X (l : list X),
+  fold_length l = length l.
+Admitted.
+(* ☐ *)
+
+(*
+練習問題: ★★★, recommended (fold_map)
+
+map関数もfoldを使って書くことができます。以下のfold_mapを完成さ
+せなさい。
+ *)
+
+Definition fold_map {X Y:Type} (f : X -> Y) (l : list X) : list Y :=
+  fold (fun x ys => cons (f x) ys) l [].
+
+
+(* fold_mapの正しさを示す定理をCoqで書き、証明しなさい *)
+Theorem map_fold_map_eq :
+  forall {X Y:Type} (f : X -> Y) (l : list X),
+    map f l = fold_map f l.
+Proof.
+  intros.
+  induction l as [| x l'].
+  (* l = [] *) reflexivity.
+  (* l = x :: l' *)
+    unfold fold_map. unfold fold.
+    fold (fold (fun x ys => cons (f x) ys) l').
+    fold (fold_map f l').
+    simpl.
+    rewrite <- IHl'.
+    reflexivity.
+Qed.
+(* ☐ *)
+
+Module MumbleBaz.
+
+(*
+練習問題: ★★, optional (mumble_grumble)
+
+つぎの、機能的に定義された二つの型をよく観察してください。
+ *)
+
+Inductive mumble : Type :=
+  | a : mumble
+  | b : mumble -> nat -> mumble
+  | c : mumble.
+Inductive grumble (X:Type) : Type :=
+  | d : mumble -> grumble X
+  | e : X -> grumble X.
+
+(*
+次の式のうち、ある型Xについてgrumble Xの要素として正しく定義され
+ているものはどれでしょうか。
+
+ ・ d (b a 5)
+      正しい
+ ・ d mumble (b a 5)
+      正しくない -- mumble は mumble型の値ではない
+ ・ d bool (b a 5)
+      正しくない -- bool は mumble型の値ではない
+ ・ e bool true
+      正しくない -- e bool は grumble bool 型の値だが引数を取らない
+ ・ e mumble (b c 0)
+      正しくない -- e mumble は grumble mumble 型の値だが引数を取らない
+ ・ e bool (b c 0)
+      正しくない -- e bool は grumble bool 型の値だが引数を取らない
+ ・ c
+      正しい
+ *)
+
+(* ☐ *)
+
+(*
+練習問題: ★★, optional (baz_num_elts)
+
+次の、機能的に定義された型をよく観察してください。
+ *)
+
+Inductive baz : Type :=
+   | x : baz -> baz
+   | y : baz -> bool -> baz.
+
+(* 型bazはいくつの要素を持つことができるでしょうか？ *)
+
+(*
+要素数は0。
+baz から baz を作ることはできるが、
+単位元となる baz を作る方法が無い。
+ *)
+(* ☐ *)
+
+End MumbleBaz.
+
+
+(*
+練習問題: ★★★★, recommended (forall_exists_challenge)
+
+チャレンジ問題: 二つの再帰関数forallb、existsbを定義しなさい。
+forallbは、リストの全ての要素が与えられた条件を満たしているかど
+うかを返します。
+      forallb oddb [1,3,5,7,9] = true
+
+      forallb negb [false,false] = true
+
+      forallb evenb [0,2,4,5] = false
+
+      forallb (beq_nat 5) [] = true
+ *)
+
+Fixpoint forallb {X:Type} (f:X -> bool) (l:list X) :=
+  match l with
+    | [] => true
+    | x :: l' => match f x with
+                   | false => false
+                   | true => forallb f l'
+                 end
+  end.
+
+Goal forallb oddb [1,3,5,7,9] = true.
+Proof. reflexivity. Qed.
+
+Goal forallb negb [false,false] = true.
+Proof. reflexivity. Qed.
+
+Goal forallb evenb [0,2,4,5] = false.
+Proof. reflexivity. Qed.
+
+Goal forallb (beq_nat 5) [] = true.
+Proof. reflexivity. Qed.
+
+(*
+existsbは、リストの中に、与えられた条件を満たす要素が一つ以上あ
+るかを返します。
+      existsb (beq_nat 5) [0,2,3,6] = false
+
+      existsb (andb true) [true,true,false] = true
+
+      existsb oddb [1,0,0,0,0,3] = true
+
+      existsb evenb [] = false
+ *)
+
+Fixpoint existsb {X:Type} (f:X -> bool) (l:list X) :=
+  match l with
+    | [] => false
+    | x :: l' => match f x with
+                   | true => true
+                   | false => existsb f l'
+                 end
+  end.
+
+Goal existsb (beq_nat 5) [0,2,3,6] = false.
+Proof. reflexivity. Qed.
+
+Goal existsb (andb true) [true,true,false] = true.
+Proof. reflexivity. Qed.
+
+Goal existsb oddb [1,0,0,0,0,3] = true.
+Proof. reflexivity. Qed.
+
+Goal existsb evenb [] = false.
+Proof. reflexivity. Qed.
+
+
+(*
+次にexistsb'を再帰関数としてではなく、forallbとnegbを使って定義
+しなさい。.
+
+そして、existsb'とexistsbが同じ振る舞いをすることを証明しなさい。
+ *)
+
+Definition existsb' {X:Type} (f:X -> bool) l :=
+  negb (forallb (fun x => negb (f x)) l).
+
+Goal existsb' (beq_nat 5) [0,2,3,6] = false.
+Proof. reflexivity. Qed.
+
+Goal existsb' (andb true) [true,true,false] = true.
+Proof. reflexivity. Qed.
+
+Goal existsb' oddb [1,0,0,0,0,3] = true.
+Proof. reflexivity. Qed.
+
+Goal existsb' evenb [] = false.
+Proof. reflexivity. Qed.
+
+
+Theorem existb_existb'_eq :
+  forall {X:Type} (f:X -> bool) (l:list X),
+    existsb f l = existsb' f l.
+Proof.
+  induction l as [| x l'].
+  (* l = [] *) reflexivity.
+  (* l = x :: l' *)
+    unfold existsb'.
+    simpl.
+    destruct (f x).
+    (* f x = true *)
+      simpl. reflexivity.
+    (* f x = false *)
+      simpl. fold (existsb' f l'). apply IHl'.
+Qed.
+
+(* ☐ *)
+
+(*
+練習問題: ★★, optional (index_informal)
+
+index関数の定義を思い出してください。
+   Fixpoint index {X : Type} (n : nat) (l : list X) : option X :=
+     match l with
+     | [] => None
+     | a :: l' => if beq_nat n O then Some a else index (pred n) l'
+     end.
+
+次の定理の、非形式的な証明を書きなさい。
+   forall X n l, length l = n -> @index X (S n) l = None.
+ *)
+
+(*
+証明:
+  任意のリスト l について、帰納法を適用する
+    l が [] のとき、
+      さらに n が O のときは
+        length [] = O -> @index X (S O) [] = None
+          となり成立する。
+
+      さらに n が S n' のときは
+        length [] = S n' -> @index X (S n') [] = None
+          これは前提が成立しないので成立する。
+    l が x :: l' であり、
+      forall n, length l' = n -> @index X (S n) l' = None
+      が帰納法の仮定で成立しているとする
+
+      さらに n が O のときは
+        length (x :: l') = O -> @index X (S O) (x :: l') = None
+          これは前提が成立しないので成立する。
+      さらに n が S n' のときは
+        length (x :: l') = S n' -> @index X (S (S n')) (x :: l') = None
+          前提を length の定義で置き換え、
+          結果を index  の定義で置き換えると、
+        length l' = n' -> @index X (S n') l' = None
+          これは帰納法の仮定から成立する。
+☐
+*)
+
+(* Goal forall X n l, length l = n -> @index X (S n) l = None. *)
+Goal forall X l n, length l = n -> @index X (S n) l = None.
+Proof.
+  induction l as [| x l'].
+  (* l = [] *)
+    destruct n as [| n'].
+    (* n = O *) reflexivity.
+    (* n = S n' *)
+      intros eq. inversion eq.
+  (* l = x :: l' *)
+    destruct n as [| n'].
+    (* n = O *)
+      intros eq. inversion eq.
+    (* n = S n' *)
+      simpl. intro eq. inversion eq.
+      rewrite -> H0.
+      apply (IHl' n' H0).
+Qed.
