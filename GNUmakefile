@@ -3,10 +3,11 @@
 	coqc $<
 
 sources = \
-	Basics.v   \
-	Lists.v    \
-	Poly.v     \
-	Gen.v      \
+	Basics.v	\
+	Lists.v		\
+	Poly.v		\
+	Gen.v		\
+	Prop.v		\
 
 
 objs = $(sources:.v=.vo)
