@@ -592,7 +592,6 @@ Proof.
   Case "l = cons x l'".
     simpl. rewrite -> rev_snoc. rewrite -> IHl'. reflexivity. Qed.
 
-(* TODO - unresolved *)
 Theorem rev_injective :
   forall X (l1 l2 : list X), rev l1 = rev l2 -> l1 = l2.
 Proof.
