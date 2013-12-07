@@ -790,3 +790,595 @@ ev_MyProp の形式的な証明に対応する非形式的な証明を書きな�
 
         ☐
  *)
+
+
+(* 全体像: Coqの2つの空間 *)
+
+(* 値 *)
+
+(* 型とカインド *)
+
+(* 命題 vs. ブール値 *)
+
+(* 関数 vs. 限量子 *)
+
+(* 関数 vs. 含意 *)
+
+(* 非形式的な証明 *)
+
+(* 帰納法による非形式的な証明 *)
+
+(* 帰納的に定義された集合についての帰納法 *)
+
+(* 帰納的に定義された命題についての帰納法 *)
+
+(* 選択課題 *)
+
+(* induction タクティックについてもう少し *)
+
+
+(*
+練習問題: ★, optional (plus_explicit_prop)
+
+plus_assoc' と plus_comm' を、その証明とともに上の mult_0_r'' と同
+じスタイルになるよう書き直しなさい。このことは、それぞれの定理が帰
+納法で証明された命題に明確な定義を与え、この定義された命題から定理
+と証明を示しています。
+ *)
+
+Definition P_plus_assoc' (n m p : nat) : Prop :=
+  n + (m + p) = (n + m) + p.
+
+Theorem plus_assoc'' :
+  forall n m p:nat, P_plus_assoc' n m p.
+Proof.
+  induction n as [| n'].
+  Case "n = O". reflexivity.
+  Case "n = S n'".
+    unfold P_plus_assoc'. simpl.
+    unfold P_plus_assoc' in IHn'.
+    intros m p. rewrite -> IHn'. reflexivity. Qed.
+
+Definition P_plus_comm' (n m : nat) : Prop :=
+  n + m = m + n.
+
+Theorem plus_comm''' :
+  forall n m : nat, P_plus_comm' n m.
+Proof.
+  induction n as [| n'].
+  Case "n = O".
+    intros m. unfold P_plus_comm'.
+    rewrite -> plus_0_r. reflexivity.
+  Case "n = S n'".
+    intros m.
+    unfold P_plus_comm'. unfold P_plus_comm' in IHn'.
+    simpl. rewrite -> IHn'. rewrite <- plus_n_Sm. reflexivity. Qed.
+(* ☐ *)
+
+
+(*
+練習問題: ★★★★, optional (true_upto_n__true_everywhere)
+
+true_upto_n_example を満たすような再帰関数
+true_upto_n__true_everywhere を定義しなさい。
+ *)
+
+Fixpoint true_upto_n__true_everywhere (n:nat) (f:nat -> Prop) :=
+  match n with
+    | O => forall m, f m
+    | S n' => f n -> true_upto_n__true_everywhere n' f
+  end.
+
+Example true_upto_n_example :
+  (true_upto_n__true_everywhere 3 (fun n => even n))
+    = (even 3 -> even 2 -> even 1 -> forall m : nat, even m).
+Proof. reflexivity.  Qed.
+(* ☐ *)
+
+
+(* Prop における帰納法の原理 *)
+
+Check ev_ind.
+
+Theorem ev_even' : forall n, ev n -> even n.
+Proof.
+  apply ev_ind.
+  Case "ev_0". unfold even. reflexivity.
+  Case "ev_SS". intros n' E' IHE'. unfold even. apply IHE'. Qed.
+
+
+(*
+練習問題: ★★★, optional (prop_ind)
+
+帰納的に定義された list と MyProp に対し、Coq がどのような帰納法の
+原理を生成するか、予想して書き出し、次の行を実行した結果と比較しな
+さい。
+ *)
+Check list_ind.
+Check MyProp_ind.
+(* ☐ *)
+
+(*
+練習問題: ★★★, optional (ev_MyProp')
+
+もう一度 ev_MyProp を証明しなさい。ただし、今度は induction タクテ
+ィックの代わりに apply MyProp_ind を使いなさい。
+ *)
+
+Theorem ev_MyProp' :
+  forall n:nat, MyProp n -> ev n.
+Proof.
+  apply MyProp_ind.
+  (* MyProp1 *) apply (ev_SS 2 (ev_SS 0 ev_0)).
+  (* MyProp2 *)
+    intros n P evH. simpl. apply ev_SS. apply ev_SS. apply evH.
+  (* MyProp3 *)
+    intros n P evH. apply (ev_minus2 (S (S n)) evH). Qed.
+(* ☐ *)
+
+
+(*
+練習問題: ★★★★, optional (MyProp_pfobj)
+
+もう一度 MyProp_ev と ev_MyProp を証明しなさい。ただし今度は、明確
+な証明オブジェクトを手作業で構築（上の ev_plus4 でやったように）す
+ることで証明しなさい。
+ *)
+
+(* Print MyProp_ev. *)
+(* Print ev_ind. *)
+
+(*
+ev_ind =
+fun (P : nat -> Prop) (f : P 0)
+  (f0 : forall n : nat, ev n -> P n -> P (S (S n))) =>
+fix F (n : nat) (e : ev n) {struct e} : P n :=
+  match e in (ev n0) return (P n0) with
+  | ev_0 => f
+  | ev_SS n0 e0 => f0 n0 e0 (F n0 e0)
+  end
+     : forall P : nat -> Prop,
+       P 0 ->
+       (forall n : nat, ev n -> P n -> P (S (S n))) ->
+       forall n : nat, ev n -> P n
+*)
+
+Definition MyProp_ev' (n:nat) (E:ev n) : MyProp n :=
+  ev_ind MyProp MyProp_0 (fun n' _ => MyProp_plustwo n') n E.
+
+Fixpoint MyProp_ev'' (n:nat) (E:ev n) : MyProp n :=
+  match E in (ev n) return (MyProp n) with
+    | ev_0 => MyProp_0
+    | ev_SS n' E' => MyProp_plustwo n' (MyProp_ev' n' E')
+  end.
+
+(* Print MyProp_ind. *)
+
+(*
+MyProp_ind =
+fun (P : nat -> Prop) (f : P 4)
+  (f0 : forall n : nat, MyProp n -> P n -> P (4 + n))
+  (f1 : forall n : nat, MyProp (2 + n) -> P (2 + n) -> P n) =>
+fix F (n : nat) (m : MyProp n) {struct m} : P n :=
+  match m in (MyProp n0) return (P n0) with
+  | MyProp1 => f
+  | MyProp2 n0 m0 => f0 n0 m0 (F n0 m0)
+  | MyProp3 n0 m0 => f1 n0 m0 (F (2 + n0) m0)
+  end
+     : forall P : nat -> Prop,
+       P 4 ->
+       (forall n : nat, MyProp n -> P n -> P (4 + n)) ->
+       (forall n : nat, MyProp (2 + n) -> P (2 + n) -> P n) ->
+       forall n : nat, MyProp n -> P n
+ *)
+
+Definition ev_MyProp'' (n:nat) (pn:MyProp n) : ev n :=
+  MyProp_ind ev
+             (ev_SS 2 (ev_SS 0 ev_0))
+             (fun n _ pn => ev_SS (S (S n)) (ev_SS n pn))
+             (fun n _ pn => ev_minus2 (S (S n)) pn)
+             n pn.
+(* ☐ *)
+
+Module P.
+
+(*
+練習問題: ★★★, optional (p_provability)
+
+次の、帰納的に定義された命題について考えてみてください。：
+ *)
+Inductive p : (tree nat) -> nat -> Prop :=
+   | c1 : forall n, p (leaf _ n) 1
+   | c2 : forall t1 t2 n1 n2,
+            p t1 n1 -> p t2 n2 -> p (node _ t1 t2) (n1 + n2)
+   | c3 : forall t n, p t n -> p t (S n).
+(*
+これについて、どのような時に p t n が証明可能であるか、その条件を
+を自然言語で説明しなさい。
+ *)
+(*
+葉が c1 で二分岐が c2 一分岐が c3 であるような木を考える。
+葉のサイズは 1、 一分岐によるサイズの増分が 1、
+二分岐のサイズは部分木の合計であるとする。
+そのサイズを n としたとき、 t が同じ形の二分木のときには p t n が証明可能である。
+☐
+ *)
+
+End P.
+
+
+(* 追加練習問題 *)
+
+(*
+練習問題: ★★★★ (palindromes)
+
+palindrome（回文）は、最初から読んでも逆から読んでも同じになるよう
+なシーケンスです。
+
+ ・ list X でパラメータ化され、それが palindrome であることを示す
+    ような帰納的
+
+命題 pal を定義しなさい。（ヒント：これには三つのケースが必要です
+。この定義は、リストの構造に基いたものとなるはずです。まず一つのコ
+ンストラクタ、
+
+    c : forall l, l = rev l -> pal l
+
+は明らかですが、これはあまりうまくいきません。）
+
+ ・ 以下を証明しなさい。
+           forall l, pal (l ++ rev l).
+
+ ・ 以下を証明しなさい。
+           forall l, pal l -> l = rev l.
+ *)
+
+Inductive pal'' {X:Type} : list X -> Prop :=
+| pal_rev (l:list X) : l = rev l -> pal'' l.
+
+Theorem id_plus_rev_pal'' :
+  forall X (l:list X), pal'' (l ++ rev l).
+Proof.
+  intros X l. apply pal_rev.
+  induction l as [| x xs ].
+  (* l = [] *) reflexivity.
+  (* l = x :: xs *)
+    simpl.
+    rewrite <- snoc_with_append. rewrite -> rev_snoc.
+    rewrite <- IHxs. simpl. reflexivity. Qed.
+
+Theorem pal''_id_rev_eq :
+  forall X (l:list X), pal'' l -> l = rev l.
+Proof.
+  intros X l H. inversion H as [l' req]. apply req. Qed.
+
+
+Inductive pal' {X:Type} : list X -> Prop :=
+| pal_even (xs:list X) : pal' (xs ++ rev xs)
+| pal_odd (x1:X) (xs:list X) : pal' (xs ++ x1 :: rev xs)
+.
+
+Theorem id_plus_rev_pal' :
+  forall X (l:list X), pal' (l ++ rev l).
+Proof. intros X. apply (@pal_even X). Qed.
+
+Lemma app_nil :
+  forall X (l:list X), l ++ [] = l.
+Proof.
+  intros X. induction l as [| x xs].
+  (* l = [] *) reflexivity.
+  (* l = x :: xs *) simpl. rewrite -> IHxs. reflexivity. Qed.
+
+Lemma rev_app :
+  forall X (l0:list X) (l1:list X), rev (l0 ++ l1) = rev l1 ++ rev l0.
+Proof.
+  intros X.
+  induction l0 as [| x xs].
+  (* l = [] *) simpl. intros l1. rewrite -> app_nil. reflexivity.
+  (* l = x :: xs *)
+    simpl. intros l1. rewrite <- snoc_with_append.
+    rewrite -> IHxs. reflexivity. Qed.
+
+Lemma rev_involutive :
+  forall X (l:list X), rev (rev l) = l.
+Proof.
+  intros X l. induction l as [| x xs].
+  Case "l = nil". reflexivity.
+  Case "l = cons".
+    simpl. rewrite -> rev_snoc. rewrite -> IHxs.
+    reflexivity. Qed.
+
+Lemma rev_injective :
+  forall X (l1 l2 : list X), rev l1 = rev l2 -> l1 = l2.
+Proof.
+  intros X l1 l2 H.
+  rewrite <- rev_involutive.
+  rewrite <- H.
+  rewrite -> rev_involutive.
+  reflexivity.
+Qed.
+
+Theorem app_ass :
+  forall X (l1 l2 l3 : list X),
+    (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
+Proof.
+  intros X l1 l2 l3. induction l1 as [| n l1'].
+  Case "l1 = nil".
+    reflexivity.
+  Case "l1 = cons n l1'".
+    simpl. rewrite -> IHl1'. reflexivity. Qed.
+
+Lemma snoc_cons_app :
+  forall X (l1 l2 : list X) (x:X), (snoc l1 x) ++ l2 = l1 ++ x :: l2.
+Proof.
+  intros X l1 l2 x.
+  assert (snoc (l1 ++ []) x = l1 ++ snoc [] x) as saH by apply snoc_with_append.
+  simpl in saH. rewrite -> app_nil in saH.
+  rewrite -> saH. rewrite -> app_ass.
+  simpl. reflexivity. Qed.
+
+Theorem pal'_id_rev_eq :
+  forall X (l:list X), pal' l -> l = rev l.
+Proof.
+  intros X l palv.
+  destruct palv as [xs | x1 xs].
+  (* palv = pal_even xs *)
+    rewrite -> rev_app. rewrite -> rev_involutive. reflexivity.
+  (* palv = pal_odd x1 xs *)
+    rewrite -> rev_app. simpl. rewrite -> rev_involutive.
+    rewrite -> snoc_cons_app. reflexivity.
+Qed.
+(*
+ *)
+
+Inductive pal {X:Type} : list X -> Prop :=
+| pal_0 : pal nil
+| pal_1 : forall (x1:X), pal [x1]
+| pal_next : forall (xs:list X) (xn:X), pal xs -> pal (xn :: (snoc xs xn))
+.
+
+Theorem id_plus_rev_pal :
+  forall X (l:list X), pal (l ++ rev l).
+Proof.
+  intros X l.
+  induction l as [| x xs].
+  (* l = [] *) simpl. apply pal_0.
+  (* l = x :: xs *)
+    simpl. rewrite  <- snoc_with_append. apply pal_next. apply IHxs.
+Qed.
+
+Theorem pal_id_rev_eq :
+  forall X (l:list X), pal l -> l = rev l.
+Proof.
+  intros X l palv.
+  induction palv as [| x1 | xs sn palv'].
+  (* l = [] *) reflexivity.
+  (* l = [x1] *) reflexivity.
+  (* l = xn :: snoc xs xn *)
+    simpl. rewrite -> rev_snoc.
+    simpl. rewrite <- IHpalv'.
+    reflexivity. Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★★★★, optional (palindrome_converse)
+
+一つ前の練習問題で定義した pal を使って、これを証明しなさい。
+     forall l, l = rev l -> pal l.
+ *)
+
+Theorem palindrome_converse'' :
+  forall X (l:list X), l = rev l -> pal'' l.
+Proof.
+  intros X l. apply pal_rev. Qed.
+
+Lemma rev_eq_decrease :
+  forall X (x:X) (l:list X), x :: snoc l x = rev (x :: snoc l x) -> l = rev l.
+Proof.
+  intros X x l eq.
+  simpl in eq. rewrite -> rev_snoc in eq. simpl in eq.
+  inversion eq.
+  apply (f_equal rev) in H0.
+  rewrite -> rev_snoc in H0.
+  rewrite -> rev_snoc in H0.
+  inversion H0.
+  rewrite -> rev_involutive in H1.
+  symmetry. apply H1. Qed.
+
+
+Eval simpl in (eq_ind ).
+
+  (* assert (pal' (l ++ l)). replace (l ++ l) with (l ++ rev l). apply id_plus_rev_pal'. *)
+  (* rewrite <- H. reflexivity. *)
+
+(*
+Fixpoint palindrome_converse {X:Type} (l:list X) (H : l = rev l) : pal l :=
+  match l with
+    | [] => pal_0
+    | x :: xs =>
+        match rev xs with
+          | [] => pal_1
+          | x' :: xs' =>
+ *)
+
+
+(*
+Theorem palindrome_converse :
+  forall X (l:list X), l = rev l -> pal l.
+Proof.
+  intros X l H.
+  induction l as [| x rxxs].
+  (* l = [] *) apply pal_0.
+  (* l = x :: rxxs *)
+    simpl in H.
+    induction (rev rxxs) as [| x' xs] _eqn: eq.
+    (* rev rxxs = [] *)
+      apply (f_equal rev) in eq. simpl in eq. rewrite -> rev_involutive in eq.
+      rewrite -> eq. apply (pal_odd x []).
+    (* rev rxxs = x' :: xs *)
+      simpl in H. inversion H. apply pal_next.
+
+    unfold pal.
+  assert (pal (l ++ rev l)) as plusRev.
+  (* replace (l ++ l) with (l ++ rev l). *)
+  apply (id_plus_rev_pal X l).
+  (* rewrite <- H. reflexivity. *)
+  induction l as [| x xs].
+  (* l = [] *) apply pal_0.
+  (* l = x :: xs *)
+    simpl in plusRev.
+    rewrite <- snoc_with_append in plusRev.
+    (* rev_eq *)
+    (* assert (forall (l0 l1:list X), l0 = l1 -> rev l0 = rev l1) as rev_eq. *)
+    (*   intros l0 l1 eq.  rewrite <- eq. reflexivity. *)
+    inversion plusRev as [| x1 | xssx xn palv ].
+    (* plusRev = pal_1 *)
+      assert (rev [] = rev (snoc (xs ++ rev xs) x)) as revH2.
+      (* revH2 *)
+        rewrite <- H2. reflexivity.
+      simpl in revH2. rewrite -> rev_snoc in revH2. inversion revH2.
+    (* plusRev = pal_next xssx xn palv *)
+      assert (rev (snoc xssx x) = rev (snoc (xs ++ rev xs) x)) as revH2.
+      rewrite <- H2. reflexivity.
+      rewrite -> rev_snoc in revH2. rewrite -> rev_snoc in revH2.
+      inversion revH2.
+      assert (xssx = xs ++ rev xs) as xssxH.
+      apply rev_injective.
+
+      rewrite -> snoc_with_append in H2.
+      assert (snoc (rev xs) x = rev (x :: xs)) as rev_def by reflexivity.
+      rewrite -> rev_def in H2.
+      rewrite <- H in H2.
+      (* -- assert (snoc (xs ++ rev xs) x = xs ++ rev (x :: xs)) *)
+  
+  inversion H3.
+  (* l = [] *) intros palv. apply pal_0.
+  (* l = x :: xs *)
+    simpl.
+    induction (rev xs) as [| y xs'].
+    (* rev xs = [] *) intros palv. inversion palv. apply pal_1.
+    (* rev xs = y :: xs' *)
+      simpl. inversion.
+      simpl in palv. inversion palv.
+ *)
+(* ☐ *)
+
+(*
+練習問題: ★★★★ (subsequence)
+
+あるリストが、別のリストのサブシーケンス（ subsequence ）であると
+は、最初のリストの要素が全て二つ目のリストに同じ順序で現れるという
+ことです。ただし、その間に何か別の要素が入ってもかまいません。例え
+ば、
+    [1,2,3]
+
+は、次のいずれのリストのサブシーケンスでもあります。
+    [1,2,3]
+    [1,1,1,2,2,3]
+    [1,2,7,3]
+    [5,6,1,9,9,2,7,3,8]
+
+しかし、次のいずれのリストのサブシーケンスでもありません。
+    [1,2]
+    [1,3]
+    [5,6,2,1,7,3,8]
+
+ ・ list nat 上に、そのリストがサブシーケンスであることを意味する
+    ような命題 subseq を定義しなさい。（ヒント：三つのケースが必要
+    になります）
+   
+ ・ サブシーケンスである、という関係が「反射的」であることを証明し
+    なさい。つまり、どのようなリストも、それ自身のサブシーケンスで
+    あるということです。
+   
+ ・ 任意のリスト l1、 l2、 l3 について、もし l1 が l2 のサブシーケ
+    ンスならば、 l1 は l2 ++ l3 のサブシーケンスでもある、というこ
+    とを証明しなさい。.
+   
+ ・ （これは少し難しいですので、任意とします）サブシーケンスという
+    関係は推移的である、つまり、 l1 が l2 のサブシーケンスであり、
+    l2 が l3 のサブシーケンスであるなら、 l1 は l3 のサブシーケン
+    スである、というような関係であることを証明しなさい。（ヒント：
+    何について帰納法を適用するか、よくよく注意して下さい。）
+
+☐
+
+練習問題: ★★, optional (foo_ind_principle)
+
+次のような、帰納的な定義をしたとします：
+   Inductive foo (X : Set) (Y : Set) : Set :=
+     | foo1 : X → foo X Y
+     | foo2 : Y → foo X Y
+     | foo3 : foo X Y → foo X Y.
+
+次の空欄を埋め、この定義のために Coq が生成する帰納法の原理を完成
+させなさい。
+
+   foo_ind
+        : ∀ (X Y : Set) (P : foo X Y → Prop),
+          (∀ x : X, __________________________________) →
+          (∀ y : Y, __________________________________) →
+          (________________________________________________) →
+           ________________________________________________
+
+☐
+
+練習問題: ★★, optional (bar_ind_principle)
+
+次に挙げた帰納法の原理について考えてみましょう：
+   bar_ind
+        : ∀ P : bar → Prop,
+          (∀ n : nat, P (bar1 n)) →
+          (∀ b : bar, P b → P (bar2 b)) →
+          (∀ (b : bool) (b0 : bar), P b0 → P (bar3 b b0)) →
+          ∀ b : bar, P b
+
+これに対応する帰納的な集合の定義を書きなさい。
+   Inductive bar : Set :=
+     | bar1 : ________________________________________
+     | bar2 : ________________________________________
+     | bar3 : ________________________________________.
+
+☐
+
+練習問題: ★★, optional (no_longer_than_ind)
+
+次のような、帰納的に定義された命題が与えられたとします：
+  Inductive no_longer_than (X : Set) : (list X) → nat → Prop :=
+    | nlt_nil : ∀ n, no_longer_than X [] n
+    | nlt_cons : ∀ x l n, no_longer_than X l n →
+                               no_longer_than X (x::l) (S n)
+    | nlt_succ : ∀ l n, no_longer_than X l n →
+                             no_longer_than X l (S n).
+
+この命題のために Coq が生成する帰納法の原理を完成させなさい。
+  no_longer_than_ind
+       : ∀ (X : Set) (P : list X → nat → Prop),
+         (∀ n : nat, ____________________) →
+         (∀ (x : X) (l : list X) (n : nat),
+          no_longer_than X l n → ____________________ →
+                                  _____________________________ →
+         (∀ (l : list X) (n : nat),
+          no_longer_than X l n → ____________________ →
+                                  _____________________________ →
+         ∀ (l : list X) (n : nat), no_longer_than X l n →
+           ____________________
+
+☐
+
+練習問題: ★★, optional (R_provability)
+
+Coq に次のような定義を与えたとします：
+    Inductive R : nat → list nat → Prop :=
+      | c1 : R 0 []
+      | c2 : ∀ n l, R n l → R (S n) (n :: l)
+      | c3 : ∀ n l, R (S n) l → R n l.
+
+次のうち、証明可能なのはどの命題でしょうか？
+
+ ・ R 2 [1,0]
+ ・ R 1 [1,2,1,0]
+ ・ R 6 [3,2,1,0]
+
+☐
+ *)
