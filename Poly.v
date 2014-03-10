@@ -1241,7 +1241,17 @@ Proof. reflexivity. Qed.
 
 Theorem fold_length_correct : forall X (l : list X),
   fold_length l = length l.
-Admitted.
+Proof.
+  induction l as [| x l'].
+  simpl.
+  reflexivity.
+
+  simpl.
+  rewrite <- IHl'.
+  unfold fold_length.
+  simpl.
+  reflexivity.
+Qed.
 (* ☐ *)
 
 (*
@@ -1261,10 +1271,30 @@ Theorem map_fold_map_eq :
     map f l = fold_map f l.
 Proof.
   intros.
+
+  (*
+  unfold fold_map.
+  induction l as [| x l'].
+  reflexivity.
+
+  simpl.
+  rewrite <- IHl'.
+  reflexivity.
+  *)
+
   induction l as [| x l'].
   (* l = [] *) reflexivity.
   (* l = x :: l' *)
-    unfold fold_map. unfold fold.
+    unfold fold_map.
+
+    (*
+    simpl.
+    rewrite -> IHl'.
+    unfold fold_map.
+    reflexivity.
+     *)
+
+    unfold fold.
     fold (fold (fun x ys => cons (f x) ys) l').
     fold (fold_map f l').
     simpl.
@@ -1289,22 +1319,36 @@ Inductive grumble (X:Type) : Type :=
   | d : mumble -> grumble X
   | e : X -> grumble X.
 
+Check (d nat (b a 5)).
+
+Check (d mumble (b a 5)).
+
+Check (d bool (b a 5)).
+
+Check (e bool true).
+
+Check (e mumble (b c 0)).
+
+(* Check (e bool (b c 0)). *)
+
+Check c.
+
 (*
 次の式のうち、ある型Xについてgrumble Xの要素として正しく定義され
 ているものはどれでしょうか。
 
  ・ d (b a 5)
-      正しい
+      正しくない -- (b a 5) は Type 型ではない
  ・ d mumble (b a 5)
-      正しくない -- mumble は mumble型の値ではない
+      正しい
  ・ d bool (b a 5)
-      正しくない -- bool は mumble型の値ではない
+      正しい
  ・ e bool true
-      正しくない -- e bool は grumble bool 型の値だが引数を取らない
+      正しい
  ・ e mumble (b c 0)
-      正しくない -- e mumble は grumble mumble 型の値だが引数を取らない
+      正しい
  ・ e bool (b c 0)
-      正しくない -- e bool は grumble bool 型の値だが引数を取らない
+      正しくない -- (b c 0) は bool ではない
  ・ c
       正しい
  *)
@@ -1439,7 +1483,8 @@ Proof.
     (* f x = true *)
       simpl. reflexivity.
     (* f x = false *)
-      simpl. fold (existsb' f l'). apply IHl'.
+      simpl. rewrite -> IHl'. reflexivity.
+      (* fold (existsb' f l'). apply IHl'. *)
 Qed.
 
 (* ☐ *)
