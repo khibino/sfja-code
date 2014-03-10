@@ -916,6 +916,9 @@ dictionary に適用してキーと値の対応を追加した dictionary を構
 Definition insert (key value : nat) (d : dictionary) : dictionary :=
   (record key value d).
 
+Eval simpl in insert 0 1 empty.
+Eval simpl in record 0 1 empty.
+
 (*
 下の find 関数は、 dictionary から与えられたキーに対応する値を探し出すも
 のです。キーが見つからなかった場合には None に評価され、キーが val に結び
