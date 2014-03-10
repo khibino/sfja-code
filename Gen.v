@@ -114,14 +114,14 @@ Proof.
     (* n = O *) reflexivity.
     (* n = S n' *)
       intros eq. inversion eq.
-  (* l = x :: l' *)
+  (* l = x :: l' *)  (* simpl. intros n eq. rewrite <- eq. apply IHl'. *)
     destruct n as [| n'].
     (* n = O *)
       intros eq. inversion eq.
     (* n = S n' *)
       intros eq. inversion eq.
-      rewrite -> H0.
-      apply (IHl' n' H0).
+      apply IHl'.
+      reflexivity.
 Qed.
 (* ☐ *)
 
