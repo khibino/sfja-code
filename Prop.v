@@ -173,8 +173,7 @@ Theorem mult_0_r' :
 Proof.
   apply nat_ind.
   Case "O". reflexivity.
-  Case "S". simpl. intros n IHn. rewrite -> IHn.
-    reflexivity. Qed.
+  Case "S". simpl. intros n IHn. apply IHn. Qed.
 
 
 (*
