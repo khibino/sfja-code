@@ -1133,7 +1133,7 @@ Qed.
 Inductive pal {X:Type} : list X -> Prop :=
 | pal_0 : pal nil
 | pal_1 : forall (x1:X), pal [x1]
-| pal_next : forall (xs:list X) (xn:X), pal xs -> pal (xn :: (snoc xs xn))
+| pal_next : forall (xs:list X) (xn:X), pal xs -> pal (xn :: snoc xs xn)
 .
 
 Theorem id_plus_rev_pal :
