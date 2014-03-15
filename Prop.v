@@ -1184,63 +1184,61 @@ Proof.
   rewrite -> rev_involutive in H1.
   symmetry. apply H1. Qed.
 
-Inductive plist {X:Type} : list X -> Prop :=
-| plist_0 : plist []
-| plist_1 : forall (x:X), plist [x]
-| plist_next : forall (x:X) (xs:list X), plist xs -> plist (x :: snoc xs x)
+Inductive rev_eq {X:Type} : list X -> Prop :=
+| rev_eq_0 : @nil X = rev [] -> rev_eq []
+| rev_eq_1 : forall (x:X), [x] = rev [x] -> rev_eq [x]
+| rev_eq_some : forall (x:X) (xs:list X), xs = rev xs -> rev_eq (x :: snoc xs x)
 .
 
-Lemma plist_revEq :
-  forall X (l:list X), plist l -> l = rev l.
-Proof.
-  intros X l pl.
-  induction pl as [| x | x xs pl' ].
-  (* [] *)  reflexivity.
-  (* [x] *) reflexivity.
-  (* x :: xs *)
-    simpl. rewrite -> rev_snoc. simpl.
-    rewrite <- IHpl'. reflexivity.
-Qed.
-
-Lemma revEq_plist :
-  forall X (l:list X), l = rev l -> plist l.
+Lemma rev_equal_eq :
+  forall X (l:list X), l = rev l -> rev_eq l.
 Proof.
   intros X l req.
-  destruct l as [| x rx].
-  (* [] *) apply plist_0.
-  (* x :: rx *)
+  destruct l as [| x xs].
+  (* l = [] *)  apply rev_eq_0. reflexivity.
+  (* l = x :: xs *)
     simpl in req.
-    induction (rev rx) as [| x' r] _eqn: eq.
-    (* rx = [] *)
-      apply (f_equal rev) in eq.
-      simpl in eq. rewrite -> rev_involutive in eq.
-      rewrite -> eq.
-      apply plist_1.
-    (* x :: snoc r x' *)
-      apply (f_equal rev) in eq.
-      simpl in eq. rewrite -> rev_involutive in eq.
+    destruct (rev xs) as [| x' r] _eqn: req1.
+    (* rev xs = [] *)
+      simpl in req. rewrite -> req. apply rev_eq_1. simpl. reflexivity.
+    (* rev xs = x' :: r *)
+      simpl in req. inversion req as [xeq].
+      rewrite <- xeq. rewrite <- xeq in req, H, req1.
+      apply rev_eq_some.
 
-      (* simpl in req. inversion req. rewrite <- H0 in H1. *)
-      (* rewrite -> H1 in IHr. *)
-Admitted.
+      rewrite -> H in req1. rewrite -> rev_snoc in req1.
+      inversion req1.
+      rewrite -> H1. rewrite -> H1. reflexivity.
+Qed.
 
-Theorem palindrome_converse_plist :
-  forall X (l:list X), plist l -> pal l.
+Lemma rev_eq_equal :
+  forall X (l:list X), rev_eq l -> l = rev l.
 Proof.
-  intros X l pl.
-  induction pl as [ e0 | x | x xs ppl ].
-  (* [] *)  apply pal_0.
-  (* [x] *) apply pal_1.
-  (* x :: xs *)
-    apply (pal_next xs x IHppl).
-Qed. 
+  intros X l re.
+  destruct re as [ e0 | x e1 | x xs req].
+  (* 0 *) reflexivity.
+  (* 1 *) reflexivity.
+  (* some *)
+    simpl. rewrite -> rev_snoc. simpl.
+    rewrite <- req.
+    reflexivity.
+Qed.
+
+Theorem palindrome_converse_rev_eq :
+  forall X (l:list X), rev_eq l -> pal l.
+Proof.
+  intros X l re.
+  induction re as [ e0 | x e1 | x xs req].
+  apply pal_0.
+  apply pal_1.
+Admitted.
 
 Theorem palindrome_converse :
   forall X (l:list X), l = rev l -> pal l.
 Proof.
   intros X l req.
-  apply palindrome_converse_plist.
-  apply revEq_plist.
+  apply palindrome_converse_rev_eq.
+  apply rev_equal_eq.
   exact req.
 Qed.
 (*
