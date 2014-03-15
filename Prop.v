@@ -1309,14 +1309,13 @@ Proof.
   (* rec1 *) simpl. apply subseq_rec1. apply IHs1.
 Qed.
 
-(*
 Theorem subseq_trans :
   forall (l1 l2 l3:list nat), subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
 Proof.
   intros l1 l2 l3 sa sb.
   induction sa as [l | x l xs s0 | x l xs s1].
   (* 0 *) apply subseq_0.
- *)
+Admitted.
 
 (* ☐ *)
 
@@ -1338,9 +1337,29 @@ Proof.
           (∀ y : Y, __________________________________) →
           (________________________________________________) →
            ________________________________________________
+ *)
 
-☐
+(*
+foo_ind : forall (X Y : Set) (P : foo X Y → Prop),
+          (forall x : X, P (foo1 X x)) →
+          (forall y : Y, P (foo2 Y y)) →
+          (forall f : foo X Y, P f → P (foo3 X Y f)) →
+          forall f : foo X Y, P f
+ *)
 
+Module Foo.
+
+Inductive foo (X : Set) (Y : Set) : Set :=
+| foo1 : X -> foo X Y
+| foo2 : Y -> foo X Y
+| foo3 : foo X Y -> foo X Y
+.
+
+End Foo.
+
+(* ☐ *)
+
+(*
 練習問題: ★★, optional (bar_ind_principle)
 
 次に挙げた帰納法の原理について考えてみましょう：
@@ -1356,9 +1375,23 @@ Proof.
      | bar1 : ________________________________________
      | bar2 : ________________________________________
      | bar3 : ________________________________________.
+ *)
 
-☐
+Check (list nat).
 
+Module Bar.
+
+Inductive bar : Set :=
+| bar1 : nat -> bar
+| bar2 : bar -> bar
+| bar3 : bool -> bar -> bar
+.
+
+End Bar.
+
+(* ☐ *)
+
+(*
 練習問題: ★★, optional (no_longer_than_ind)
 
 次のような、帰納的に定義された命題が与えられたとします：
