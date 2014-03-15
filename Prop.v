@@ -1284,9 +1284,45 @@ Qed.
     l2 が l3 のサブシーケンスであるなら、 l1 は l3 のサブシーケン
     スである、というような関係であることを証明しなさい。（ヒント：
     何について帰納法を適用するか、よくよく注意して下さい。）
+*)
 
-☐
+Inductive subseq : list nat -> list nat -> Prop :=
+| subseq_0 : forall (l:list nat), subseq [] l
+| subseq_rec0 : forall (x:nat) (l xs:list nat), subseq l xs -> subseq l (x::xs)
+| subseq_rec1 : forall (x:nat) (l xs:list nat), subseq l xs -> subseq (x::l) (x::xs)
+.
 
+Theorem subseq_refl :
+  forall (l:list nat), subseq l l.
+Proof.
+  intro l.
+  induction l as [| x xs].
+  (* [] *) apply subseq_0.
+  (* x::xs *) apply subseq_rec1. apply IHxs.
+Qed.
+
+Theorem subseq_app :
+  forall (l1 l2 l3:list nat), subseq l1 l2 -> subseq l1 (l2 ++ l3).
+Proof.
+  intros l1 l2 l3 s.
+  induction s as [l | x l xs s0 | x l xs s1].
+  (* 0 *) apply subseq_0.
+  (* rec0 *) simpl. apply subseq_rec0. apply IHs0.
+  (* rec1 *) simpl. apply subseq_rec1. apply IHs1.
+Qed.
+
+(*
+Theorem subseq_trans :
+  forall (l1 l2 l3:list nat), subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
+Proof.
+  intros l1 l2 l3 sa sb.
+  induction sa as [l | x l xs s0 | x l xs s1].
+  (* 0 *) apply subseq_0.
+ *)
+
+(* ☐ *)
+
+(*
 練習問題: ★★, optional (foo_ind_principle)
 
 次のような、帰納的な定義をしたとします：
