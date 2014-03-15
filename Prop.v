@@ -1184,81 +1184,66 @@ Proof.
   rewrite -> rev_involutive in H1.
   symmetry. apply H1. Qed.
 
+Inductive plist {X:Type} : list X -> Prop :=
+| plist_0 : plist []
+| plist_1 : forall (x:X), plist [x]
+| plist_next : forall (x:X) (xs:list X), plist xs -> plist (x :: snoc xs x)
+.
 
-Eval simpl in (eq_ind ).
+Lemma plist_revEq :
+  forall X (l:list X), plist l -> l = rev l.
+Proof.
+  intros X l pl.
+  induction pl as [| x | x xs pl' ].
+  (* [] *)  reflexivity.
+  (* [x] *) reflexivity.
+  (* x :: xs *)
+    simpl. rewrite -> rev_snoc. simpl.
+    rewrite <- IHpl'. reflexivity.
+Qed.
 
-  (* assert (pal' (l ++ l)). replace (l ++ l) with (l ++ rev l). apply id_plus_rev_pal'. *)
-  (* rewrite <- H. reflexivity. *)
+Lemma revEq_plist :
+  forall X (l:list X), l = rev l -> plist l.
+Proof.
+  intros X l req.
+  destruct l as [| x rx].
+  (* [] *) apply plist_0.
+  (* x :: rx *)
+    simpl in req.
+    induction (rev rx) as [| x' r] _eqn: eq.
+    (* rx = [] *)
+      apply (f_equal rev) in eq.
+      simpl in eq. rewrite -> rev_involutive in eq.
+      rewrite -> eq.
+      apply plist_1.
+    (* x :: snoc r x' *)
+      apply (f_equal rev) in eq.
+      simpl in eq. rewrite -> rev_involutive in eq.
 
-(*
-Fixpoint palindrome_converse {X:Type} (l:list X) (H : l = rev l) : pal l :=
-  match l with
-    | [] => pal_0
-    | x :: xs =>
-        match rev xs with
-          | [] => pal_1
-          | x' :: xs' =>
- *)
+      (* simpl in req. inversion req. rewrite <- H0 in H1. *)
+      (* rewrite -> H1 in IHr. *)
+Admitted.
 
+Theorem palindrome_converse_plist :
+  forall X (l:list X), plist l -> pal l.
+Proof.
+  intros X l pl.
+  induction pl as [ e0 | x | x xs ppl ].
+  (* [] *)  apply pal_0.
+  (* [x] *) apply pal_1.
+  (* x :: xs *)
+    apply (pal_next xs x IHppl).
+Qed. 
 
-(*
 Theorem palindrome_converse :
   forall X (l:list X), l = rev l -> pal l.
 Proof.
-  intros X l H.
-  induction l as [| x rxxs].
-  (* l = [] *) apply pal_0.
-  (* l = x :: rxxs *)
-    simpl in H.
-    induction (rev rxxs) as [| x' xs] _eqn: eq.
-    (* rev rxxs = [] *)
-      apply (f_equal rev) in eq. simpl in eq. rewrite -> rev_involutive in eq.
-      rewrite -> eq. apply (pal_odd x []).
-    (* rev rxxs = x' :: xs *)
-      simpl in H. inversion H. apply pal_next.
-
-    unfold pal.
-  assert (pal (l ++ rev l)) as plusRev.
-  (* replace (l ++ l) with (l ++ rev l). *)
-  apply (id_plus_rev_pal X l).
-  (* rewrite <- H. reflexivity. *)
-  induction l as [| x xs].
-  (* l = [] *) apply pal_0.
-  (* l = x :: xs *)
-    simpl in plusRev.
-    rewrite <- snoc_with_append in plusRev.
-    (* rev_eq *)
-    (* assert (forall (l0 l1:list X), l0 = l1 -> rev l0 = rev l1) as rev_eq. *)
-    (*   intros l0 l1 eq.  rewrite <- eq. reflexivity. *)
-    inversion plusRev as [| x1 | xssx xn palv ].
-    (* plusRev = pal_1 *)
-      assert (rev [] = rev (snoc (xs ++ rev xs) x)) as revH2.
-      (* revH2 *)
-        rewrite <- H2. reflexivity.
-      simpl in revH2. rewrite -> rev_snoc in revH2. inversion revH2.
-    (* plusRev = pal_next xssx xn palv *)
-      assert (rev (snoc xssx x) = rev (snoc (xs ++ rev xs) x)) as revH2.
-      rewrite <- H2. reflexivity.
-      rewrite -> rev_snoc in revH2. rewrite -> rev_snoc in revH2.
-      inversion revH2.
-      assert (xssx = xs ++ rev xs) as xssxH.
-      apply rev_injective.
-
-      rewrite -> snoc_with_append in H2.
-      assert (snoc (rev xs) x = rev (x :: xs)) as rev_def by reflexivity.
-      rewrite -> rev_def in H2.
-      rewrite <- H in H2.
-      (* -- assert (snoc (xs ++ rev xs) x = xs ++ rev (x :: xs)) *)
-  
-  inversion H3.
-  (* l = [] *) intros palv. apply pal_0.
-  (* l = x :: xs *)
-    simpl.
-    induction (rev xs) as [| y xs'].
-    (* rev xs = [] *) intros palv. inversion palv. apply pal_1.
-    (* rev xs = y :: xs' *)
-      simpl. inversion.
-      simpl in palv. inversion palv.
+  intros X l req.
+  apply palindrome_converse_plist.
+  apply revEq_plist.
+  exact req.
+Qed.
+(*
  *)
 (* ☐ *)
 
