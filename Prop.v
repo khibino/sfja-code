@@ -1171,8 +1171,9 @@ Theorem palindrome_converse'' :
 Proof.
   intros X l. apply pal_rev. Qed.
 
+
 Lemma rev_eq_decrease :
-  forall X (x:X) (l:list X), x :: snoc l x = rev (x :: snoc l x) -> l = rev l.
+  forall {X} (x:X) (l:list X), x :: snoc l x = rev (x :: snoc l x) -> l = rev l.
 Proof.
   intros X x l eq.
   simpl in eq. rewrite -> rev_snoc in eq. simpl in eq.
@@ -1185,22 +1186,22 @@ Proof.
   symmetry. apply H1. Qed.
 
 Inductive rev_eq {X:Type} : list X -> Prop :=
-| rev_eq_0 : @nil X = rev [] -> rev_eq []
-| rev_eq_1 : forall (x:X), [x] = rev [x] -> rev_eq [x]
+| rev_eq_0 : rev_eq []
+| rev_eq_1 : forall (x:X), rev_eq [x]
 | rev_eq_some : forall (x:X) (xs:list X), xs = rev xs -> rev_eq (x :: snoc xs x)
 .
 
 Lemma rev_equal_eq :
-  forall X (l:list X), l = rev l -> rev_eq l.
+  forall {X} (l:list X), l = rev l -> rev_eq l.
 Proof.
   intros X l req.
   destruct l as [| x xs].
-  (* l = [] *)  apply rev_eq_0. reflexivity.
+  (* l = [] *)  apply rev_eq_0.
   (* l = x :: xs *)
     simpl in req.
     destruct (rev xs) as [| x' r] _eqn: req1.
     (* rev xs = [] *)
-      simpl in req. rewrite -> req. apply rev_eq_1. simpl. reflexivity.
+      simpl in req. rewrite -> req. apply rev_eq_1.
     (* rev xs = x' :: r *)
       simpl in req. inversion req as [xeq].
       rewrite <- xeq. rewrite <- xeq in req, H, req1.
@@ -1212,7 +1213,7 @@ Proof.
 Qed.
 
 Lemma rev_eq_equal :
-  forall X (l:list X), rev_eq l -> l = rev l.
+  forall {X} (l:list X), rev_eq l -> l = rev l.
 Proof.
   intros X l re.
   destruct re as [ e0 | x e1 | x xs req].
@@ -1224,6 +1225,21 @@ Proof.
     reflexivity.
 Qed.
 
+(*
+Require Import Recdef.
+
+Function palindrome_converse {X} (l:list X) (eq:l = rev l) {measure length l} : pal l :=
+ *)
+(*
+Fixpoint palindrome_converse {X} (l:list X) (req:l = rev l) : pal l :=
+  match (rev_equal_eq l req) (* in (rev_eq l) return (pal l) *) with
+    | rev_eq_0             => pal_0
+    | rev_eq_1 x           => pal_1 x
+    | rev_eq_some x xs eq' => pal_next xs x (@palindrome_converse X xs eq')
+  end.
+ *)
+
+(*
 Theorem palindrome_converse_rev_eq :
   forall X (l:list X), rev_eq l -> pal l.
 Proof.
@@ -1241,8 +1257,8 @@ Proof.
   apply rev_equal_eq.
   exact req.
 Qed.
-(*
  *)
+
 (* ☐ *)
 
 (*
