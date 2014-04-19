@@ -1185,14 +1185,37 @@ Proof.
   rewrite -> rev_involutive in H1.
   symmetry. apply H1. Qed.
 
-Inductive rev_eq {X:Type} : list X -> Prop :=
-| rev_eq_0 : rev_eq []
-| rev_eq_1 : forall (x:X), rev_eq [x]
-| rev_eq_some : forall (x:X) (xs:list X), xs = rev xs -> rev_eq (x :: snoc xs x)
+(*
+Inductive rev_eq {X:Type} : list X -> nat -> Prop :=
+| rev_eq_0 : rev_eq [] 0
+| rev_eq_1 : forall (x:X), rev_eq [x] 1
+| rev_eq_some :
+    forall (n:nat) (x:X) (xs:list X),
+      n = length xs -> xs = rev xs -> rev_eq (x :: snoc xs x) (2 + length xs)
+.
+ *)
+
+Inductive rev_eq {X:Type} : list X -> nat -> Prop :=
+| rev_eq_0 : rev_eq [] 0
+| rev_eq_1 : forall (x:X), rev_eq [x] 1
+| rev_eq_some :
+    forall (n:nat) (x:X) (xs:list X),
+      n = length xs -> xs = rev xs -> rev_eq (x :: snoc xs x) (2 + n)
 .
 
+
+Theorem length_snoc :
+  forall (X : Type) (v : X) (l : list X),
+    length (snoc l v) = S (length l).
+Proof.
+  intros X v l. induction l as [| v' l'].
+  (* l = [] *) reflexivity.
+  (* l = v' :: l' *)
+    simpl. rewrite -> IHl'. reflexivity.
+Qed.
+
 Lemma rev_equal_eq :
-  forall {X} (l:list X), l = rev l -> rev_eq l.
+  forall {X} (l:list X), l = rev l -> rev_eq l (length l).
 Proof.
   intros X l req.
   destruct l as [| x xs].
@@ -1205,7 +1228,8 @@ Proof.
     (* rev xs = x' :: r *)
       simpl in req. inversion req as [xeq].
       rewrite <- xeq. rewrite <- xeq in req, H, req1.
-      apply rev_eq_some.
+      simpl. rewrite -> length_snoc.
+      apply (rev_eq_some (length r)). reflexivity.
 
       rewrite -> H in req1. rewrite -> rev_snoc in req1.
       inversion req1.
@@ -1213,10 +1237,10 @@ Proof.
 Qed.
 
 Lemma rev_eq_equal :
-  forall {X} (l:list X), rev_eq l -> l = rev l.
+  forall {X} (l:list X), rev_eq l (length l) -> l = rev l.
 Proof.
   intros X l re.
-  destruct re as [ e0 | x e1 | x xs req].
+  destruct re as [ e0 | x e1 | n x xs lenEq req].
   (* 0 *) reflexivity.
   (* 1 *) reflexivity.
   (* some *)
@@ -1226,16 +1250,42 @@ Proof.
 Qed.
 
 (*
+Inductive len_rev_eq {X:Type} : list X -> nat -> Prop :=
+| len_rev_eq_some : forall (xs:list X), xs = rev xs -> len_rev_eq xs (length xs)
+.
+
+Lemma equal_len_rev_eq :
+  forall {X} (l:list X), l = rev l -> len_rev_eq l (length l).
+Proof.
+  intros X l req.
+  apply len_rev_eq_some. apply req.
+Qed.
+ *)
+
+(*
 Require Import Recdef.
 
 Function palindrome_converse {X} (l:list X) (eq:l = rev l) {measure length l} : pal l :=
  *)
+
 (*
-Fixpoint palindrome_converse {X} (l:list X) (req:l = rev l) : pal l :=
-  match (rev_equal_eq l req) (* in (rev_eq l) return (pal l) *) with
+Lemma palindrome_converse0 :
+  forall {X} (l:list X) (n:nat), rev_eq l n -> pal l.
+Proof.
+  intros X l n req.
+  induction req as [ e0 | x e1 | n x xs lenEq req' ].
+  (* rev_eq_0 *) apply pal_0.
+  (* rev_eq_1 *) apply pal_1.
+  (* rev_eq_some *)
+    apply pal_next.
+ *)
+
+(*
+Fixpoint palindrome_converse {X} (l:list X) (n:nat) (req:rev_eq l n) : pal l :=
+  match req (* in (rev_eq l) return (pal l) *) with
     | rev_eq_0             => pal_0
     | rev_eq_1 x           => pal_1 x
-    | rev_eq_some x xs eq' => pal_next xs x (@palindrome_converse X xs eq')
+    | rev_eq_some n x xs leq eq' => pal_next xs x (@palindrome_converse X xs (length xs) (rev_equal_eq xs eq'))
   end.
  *)
 
