@@ -459,7 +459,7 @@ Proof.
 (*
 練習問題: ★★★★, optional (double_even_pfobj)
 
-上記のタクティックによる証明でどのような証明オブジェクトが構築されるかを予想しなさい。 
+上記のタクティックによる証明でどのような証明オブジェクトが構築されるかを予想しなさい。
 (答を確かめる前に、Case を除去しましょう。
  これがあると証明オブジェクトが少し見づらくなります。)
 
@@ -467,7 +467,7 @@ Proof.
 
 (* Check nat_ind. *)
 (* nat_ind
-      : forall P : nat -> Prop, 
+      : forall P : nat -> Prop,
         P 0 -> (forall n : nat, P n -> P (S n)) -> forall n : nat, P n *)
 
 Definition double_even_pfobj : forall n, ev (double n) :=
@@ -1360,15 +1360,15 @@ Qed.
  ・ list nat 上に、そのリストがサブシーケンスであることを意味する
     ような命題 subseq を定義しなさい。（ヒント：三つのケースが必要
     になります）
-   
+
  ・ サブシーケンスである、という関係が「反射的」であることを証明し
     なさい。つまり、どのようなリストも、それ自身のサブシーケンスで
     あるということです。
-   
+
  ・ 任意のリスト l1、 l2、 l3 について、もし l1 が l2 のサブシーケ
     ンスならば、 l1 は l2 ++ l3 のサブシーケンスでもある、というこ
     とを証明しなさい。.
-   
+
  ・ （これは少し難しいですので、任意とします）サブシーケンスという
     関係は推移的である、つまり、 l1 が l2 のサブシーケンスであり、
     l2 が l3 のサブシーケンスであるなら、 l1 は l3 のサブシーケン
@@ -1401,12 +1401,21 @@ Proof.
   (* rec1 *) simpl. apply subseq_rec1. apply IHs1.
 Qed.
 
+Lemma app_subseq_L :
+  forall (l1 l2 l3:list nat), subseq (l1 ++ l2) l3 -> subseq l1 l3.
+Proof.
+  intros l1 l2 l3 s.
+  induction l1 as [| x xs].
+  (* l1 = [] *) apply subseq_0.
+Admitted.
+
 Theorem subseq_trans :
   forall (l1 l2 l3:list nat), subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
 Proof.
-  intros l1 l2 l3 sa sb.
-  induction sa as [l | x l xs s0 | x l xs s1].
-  (* 0 *) apply subseq_0.
+  intros l1 l2.
+  generalize dependent l1.
+
+  induction l2 as [| x xs].
 Admitted.
 
 (* ☐ *)
