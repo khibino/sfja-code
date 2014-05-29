@@ -1515,9 +1515,11 @@ End Bar.
                                   _____________________________ →
          ∀ (l : list X) (n : nat), no_longer_than X l n →
            ____________________
+ *)
 
-☐
+(* ☐ *)
 
+(*
 練習問題: ★★, optional (R_provability)
 
 Coq に次のような定義を与えたとします：
@@ -1531,6 +1533,37 @@ Coq に次のような定義を与えたとします：
  ・ R 2 [1,0]
  ・ R 1 [1,2,1,0]
  ・ R 6 [3,2,1,0]
-
-☐
  *)
+
+(* ・ R 2 [1,0] *)
+(* 可能  c2 (c2 c1) *)
+(* ・ R 1 [1,2,1,0] *)
+(* 可能  c3 (c2 (c3 (c3 (c2 (c2 (c2 c1)))))) *)
+(* ・ R 6 [3,2,1,0] *)
+(* 不可能  n-1 が l に有る必要がある。この場合だと 5 が l に有る必要があるが無い *)
+
+
+Module R_Provability.
+
+Inductive R : nat -> list nat -> Prop :=
+| c1 : R 0 []
+| c2 : forall n l, R n l -> R (S n) (n :: l)
+| c3 : forall n l, R (S n) l -> R n l.
+
+Example e0 : R 2 [1,0].
+Proof. apply (c2 _ _ (c2 _ _ c1)). Qed.
+
+Example e1 : R 1 [1,2,1,0].
+Proof.
+  apply (c3 _ _
+            (c2 _ _
+                (c3 _ _
+                    (c3 _ _
+                        (c2 _ _
+                            (c2 _ _
+                                (c2 _ _ c1))))))).
+Qed.
+
+End R_Provability.
+
+(* ☐ *)
