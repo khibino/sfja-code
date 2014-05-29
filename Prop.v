@@ -1003,6 +1003,32 @@ Inductive p : (tree nat) -> nat -> Prop :=
 ☐
  *)
 
+Print tree.
+Fixpoint leaves (t:tree nat) :=
+  match t with
+    | leaf _ => 1
+    | node t1 t2 => leaves t1 + leaves t2
+  end.
+
+Lemma ble_assoc:
+  forall (a b c d:nat),
+    ble_nat a b = true ->
+    ble_nat c d = true ->
+    ble_nat (a + c) (b + d) = true.
+Proof.
+  intros a b c d P Q.
+  unfold ble_nat.
+Admitted.
+
+Theorem p_connect:
+  forall (t:tree nat) (n:nat), p t n -> ble_nat (leaves t) n = true.
+Proof.
+  intros t n P.
+  induction P.
+  (* c1 *) reflexivity.
+  (* c2 *) simpl.
+Admitted.
+
 End P.
 
 
