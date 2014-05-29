@@ -1548,3 +1548,22 @@ Proof.
       rewrite -> H0.
       apply (IHl' n' H0).
 Qed.
+
+
+Lemma app_nilL :
+  forall {X:Type} (l1 l2:list X), l1 ++ l2 = [] -> l1 = [].
+Proof.
+  intros X l1 l2 eq.
+  induction l1 as [| x xs].
+  (* l1 = [] *) reflexivity.
+  (* l1 = x :: xs *) inversion eq.
+Qed.
+
+Lemma app_nilR :
+  forall {X:Type} (l1 l2:list nat), l1 ++ l2 = [] -> l2 = [].
+Proof.
+  intros X l1 l2 eq.
+  rewrite -> (app_nilL l1 l2 eq) in eq.
+  simpl in eq.
+  apply eq.
+Qed.
