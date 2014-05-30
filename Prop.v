@@ -1488,6 +1488,8 @@ Inductive bar : Set :=
 | bar3 : bool -> bar -> bar
 .
 
+Check bar_ind.
+
 End Bar.
 
 (* ☐ *)
@@ -1516,6 +1518,33 @@ End Bar.
          ∀ (l : list X) (n : nat), no_longer_than X l n →
            ____________________
  *)
+
+(*
+  no_longer_than_ind
+       : forall (X : Set) (P : list X -> nat -> Prop),
+         (forall n : nat, P [] n) ->
+         (forall (x : X) (l : list X) (n : nat),
+          no_longer_than X l n -> P l n ->
+                                  P (x::l) (S n) ->
+         (forall (l : list X) (n : nat)
+          no_longer_than X l n -> P l n ->
+                                  P l (S n) ->
+         forall (l : list X) (n : nat), no_longer_than X l n ->
+           P l n
+ *)
+
+Module Ex_no_longer_than_ind.
+
+Inductive no_longer_than (X : Set) : (list X) -> nat -> Prop :=
+| nlt_nil : forall n, no_longer_than X [] n
+| nlt_cons : forall x l n, no_longer_than X l n ->
+                       no_longer_than X (x::l) (S n)
+| nlt_succ : forall l n, no_longer_than X l n ->
+                     no_longer_than X l (S n).
+
+Check no_longer_than_ind.
+
+End Ex_no_longer_than_ind.
 
 (* ☐ *)
 
