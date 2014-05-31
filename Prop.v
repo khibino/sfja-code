@@ -1405,6 +1405,7 @@ Lemma app_subseq_L :
   forall (l1 l2 l3:list nat), subseq (l1 ++ l2) l3 -> subseq l1 l3.
 Proof.
   intros l1 l2 l3 s.
+  induction l3 as [| x xs].
   induction l1 as [| x xs].
   (* l1 = [] *) apply subseq_0.
 Admitted.
@@ -1442,8 +1443,8 @@ Admitted.
 
 (*
 foo_ind : forall (X Y : Set) (P : foo X Y → Prop),
-          (forall x : X, P (foo1 X x)) →
-          (forall y : Y, P (foo2 Y y)) →
+          (forall x : X, P (foo1 X Y x)) →
+          (forall y : Y, P (foo2 X Y y)) →
           (forall f : foo X Y, P f → P (foo3 X Y f)) →
           forall f : foo X Y, P f
  *)
@@ -1455,6 +1456,8 @@ Inductive foo (X : Set) (Y : Set) : Set :=
 | foo2 : Y -> foo X Y
 | foo3 : foo X Y -> foo X Y
 .
+
+Check foo_ind.
 
 End Foo.
 
