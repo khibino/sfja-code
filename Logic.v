@@ -496,7 +496,13 @@ Proof.
 Theorem ev_not_ev_S : forall n,
   ev n -> ~ ev (S n).
 Proof.
-  unfold not. intros n H. induction H. Admitted.
+  unfold not. intros n H. induction H.
+  (* ev_0 *)  intro H. inversion H.
+  (* ev_SS *)
+    intro H2.
+    inversion H2 as [| n' evH ].
+    apply (IHev evH).
+Qed.
 (* ☐ *)
 
 (*
@@ -533,4 +539,40 @@ Definition de_morgan_not_and_not := forall P Q:Prop,
 Definition implies_to_or := forall P Q:Prop,
   (P -> Q)  -> (~ P \/ Q).
 
+(* ☐ *)
+
+
+(* 不等であるということ *)
+
+Notation "x <> y" := (~ (x = y)) : type_scope.
+
+Theorem not_false_then_true : forall b : bool,
+  b <> false -> b = true.
+Proof.
+  intros b H. destruct b.
+  Case "b = true". reflexivity.
+  Case "b = false".
+    unfold not in H.
+    apply ex_falso_quodlibet.
+    apply H. reflexivity. Qed.
+
+(*
+練習問題: ★★, recommended (not_eq_beq_false)
+ *)
+
+Theorem not_eq_beq_false : forall n n' : nat,
+     n <> n' ->
+     beq_nat n n' = false.
+Proof.
+Admitted.
+(* ☐ *)
+
+(*
+練習問題: ★★, optional (beq_false_not_eq)
+ *)
+
+Theorem beq_false_not_eq : forall n m,
+  false = beq_nat n m -> n <> m.
+Proof.
+Admitted.
 (* ☐ *)
