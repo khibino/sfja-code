@@ -560,19 +560,66 @@ Proof.
 練習問題: ★★, recommended (not_eq_beq_false)
  *)
 
+Lemma eq_nat_dec :
+  forall n m : nat, S n <> S m -> n <> m.
+Proof.
+  intros n m H eq. apply H.
+  rewrite <- eq. reflexivity.
+Qed.
+
 Theorem not_eq_beq_false : forall n n' : nat,
      n <> n' ->
      beq_nat n n' = false.
 Proof.
-Admitted.
+  intros n m.
+  generalize dependent n.
+  induction m as [| m' ].
+  (* m = 0 *)
+    destruct n as [| n' ].
+    (* n = 0 *)
+      intros H.
+      apply ex_falso_quodlibet. apply H.
+      reflexivity.
+    (* n = S n' *)
+      intros H. reflexivity.
+  (* m = S m' *)
+    destruct n as [| n' ].
+    (* n = 0 *) intros H. reflexivity.
+    (* n = S n' *)
+      intros H. simpl.
+      apply IHm'.
+      apply eq_nat_dec.
+      exact H.
+Qed.
 (* ☐ *)
 
 (*
 練習問題: ★★, optional (beq_false_not_eq)
  *)
 
+Lemma eq_nat_inc :
+  forall n m : nat, n <> m -> S n <> S m.
+Proof.
+  intros n m H eq. apply H.
+  inversion eq as [ eq' ]. reflexivity.
+Qed.
+
 Theorem beq_false_not_eq : forall n m,
   false = beq_nat n m -> n <> m.
 Proof.
-Admitted.
+  intros n m.
+  generalize dependent n.
+  induction m as [| m' ].
+  (* m = 0 *)
+    destruct n as [| n' ].
+    (* n = 0 *) simpl. intros eqH eq. discriminate eqH.
+    (* n = S n' *) simpl. intros eqH eq. discriminate eq.
+  (* m = S m' *)
+    destruct n as [| n' ].
+    (* n = 0 *)
+      simpl. intros eqH eq. discriminate eq.
+    (* n = S n' *)
+      simpl. intros eqH. apply eq_nat_inc.
+      apply IHm'. exact eqH.
+Qed.
 (* ☐ *)
