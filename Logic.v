@@ -623,3 +623,96 @@ Proof.
       apply IHm'. exact eqH.
 Qed.
 (* ☐ *)
+
+Inductive ex (X:Type) (P : X -> Prop) : Prop :=
+  ex_intro : forall (witness:X), P witness -> ex X P.
+
+Definition some_nat_is_even : Prop :=
+  ex nat ev.
+
+Definition sine : some_nat_is_even :=
+  ex_intro _ ev 4 (ev_SS 2 (ev_SS 0 ev_0)).
+
+Notation "'exists' x , p" :=
+  (ex _ (fun x => p)) (at level 200, x ident, right associativity) : type_scope.
+Notation "'exists' x : X , p" :=
+  (ex _ (fun x:X => p)) (at level 200, x ident, right associativity) : type_scope.
+
+Example exists_example_1 : exists n, n + (n * n) = 6.
+Proof.
+  apply ex_intro with (witness:=2).
+  reflexivity. Qed.
+
+Example exists_example_1' : exists n, n + (n * n) = 6.
+Proof.
+  exists 2.
+  reflexivity. Qed.
+
+Theorem exists_example_2 :
+  forall n, (exists m, n = 4 + m) -> (exists o, n = 2 + o).
+Proof.
+  intros n H.
+  inversion H as [m Hm].
+  exists (2 + m).
+  apply Hm. Qed.
+
+(*
+練習問題: ★ (english_exists)
+
+英語では、以下の命題は何を意味しているでしょうか？
+      ex nat (fun n => ev (S n))
+
+次の証明オブジェクトの定義を完成させなさい
+ *)
+
+Definition p : ex nat (fun n => ev (S n)) :=
+  ex_intro _ (fun n => ev (S n)) 1 (ev_SS 0 ev_0).
+(* ☐ *)
+
+(*
+練習問題: ★ (dist_not_exists)
+
+"全ての x についてP が成り立つ" ということと " P を満たさない x は存在しない" というこ
+とが等価であることを証明しなさい。
+ *)
+
+Theorem dist_not_exists : forall (X:Type) (P : X -> Prop),
+  (forall x, P x) -> ~ (exists x, ~ P x).
+Proof.
+  intros X P PH NH.
+  inversion NH as [x NP].
+  apply NP. apply PH.
+Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★★, optional (not_exists_dist)
+
+一方、古典論理の「排中律（law of the excluded middle）」が必要とされる場合もあります。
+ *)
+
+Theorem not_exists_dist :
+  excluded_middle ->
+  forall (X:Type) (P : X -> Prop),
+    ~ (exists x, ~ P x) -> (forall x, P x).
+Proof.
+  intros em X P NNP x.
+  destruct (em (P x)) as [XP | NXP].
+  (* P x *) exact XP.
+  (* ~ P x *)
+    apply ex_falso_quodlibet.
+    apply NNP. exists x. exact NXP.
+Qed.
+(* ☐ *)
+
+(*
+練習問題: ★★ (dist_exists_or)
+
+存在量化子が論理和において分配法則を満たすことを証明しなさい。
+ *)
+
+Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
+  (exists x, P x ∨ Q x) <-> (exists x, P x) ∨ (exists x, Q x).
+Proof.
+Admitted.
+(* ☐ *)
