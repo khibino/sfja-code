@@ -742,3 +742,41 @@ Qed.
 
 
 (* 等しいということ（同値性） *)
+
+Module MyEquality.
+
+Inductive eq (X:Type) : X -> X -> Prop :=
+  refl_equal : forall x, eq X x x.
+
+Notation "x = y" :=
+  (eq _ x y) (at level 70, no associativity) : type_scope.
+
+Inductive eq' (X:Type) (x:X) : X -> Prop :=
+  refl_equal' : eq' X x x.
+
+Notation "x =' y" :=
+  (eq' _ x y) (at level 70, no associativity) : type_scope.
+
+(*
+練習問題: ★★★, optional (two_defs_of_eq_coincide)
+
+これら二つの定義が等価であることを確認しなさい。
+ *)
+
+Theorem two_defs_of_eq_coincide : forall (X:Type) (x y : X),
+  x = y <-> x =' y.
+Proof.
+  intros X x y.
+  split.
+
+  (* -> *)
+  intros eqH.
+  inversion eqH as [ x' y' eqT ].
+  apply refl_equal'.
+
+  (* <- *)
+  intros eqH.
+  inversion eqH as [ eqT ].
+  apply refl_equal.
+Qed.
+(* ☐ *)
