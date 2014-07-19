@@ -739,3 +739,6 @@ Proof.
   exists x. right. exact QX.
 Qed.
 (* ☐ *)
+
+
+(* 等しいということ（同値性） *)
