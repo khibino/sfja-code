@@ -780,3 +780,18 @@ Proof.
   apply refl_equal.
 Qed.
 (* ☐ *)
+
+Check eq'_ind.
+
+Definition four : 2 + 2 = 1 + 3 :=
+  refl_equal nat 4.
+Definition singleton :
+  forall (X:Set) (x:X), [] ++ [x] = x::[] :=
+  fun (X:Set) (x:X) => refl_equal (list X) [x].
+
+End MyEquality.
+
+
+(* Inversion 再び *)
+
+(* 命題としての関係 *)
