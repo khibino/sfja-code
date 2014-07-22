@@ -795,3 +795,326 @@ End MyEquality.
 (* Inversion 再び *)
 
 (* 命題としての関係 *)
+
+Module LeFirstTry.
+
+Inductive le : nat -> nat -> Prop :=
+| le_n : forall n, le n n
+| le_S : forall n m, (le n m) -> (le n (S m)).
+
+End LeFirstTry.
+
+Inductive le (n:nat) : nat -> Prop :=
+| le_n : le n n
+| le_S : forall m, (le n m) -> (le n (S m)).
+
+Notation "m <= n" := (le m n).
+
+Check le_ind.
+
+Theorem test_le1 :
+  3 <= 3.
+Proof.
+  apply le_n. Qed.
+
+Theorem test_le2 :
+  3 <= 6.
+Proof.
+  apply le_S. apply le_S. apply le_S. apply le_n. Qed.
+
+Theorem test_le3 :
+  ~ (2 <= 1).
+Proof.
+  intros H. inversion H. inversion H1. Qed.
+
+Definition lt (n m:nat) := le (S n) m.
+
+Notation "m < n" := (lt m n).
+
+Inductive square_of : nat -> nat -> Prop :=
+  sq : forall n:nat, square_of n (n * n).
+
+Inductive next_nat (n:nat) : nat -> Prop :=
+| nn : next_nat n (S n).
+
+Inductive next_even (n:nat) : nat -> Prop :=
+| ne_1 : ev (S n) -> next_even n (S n)
+| ne_2 : ev (S (S n)) -> next_even n (S (S n)).
+
+
+(*
+練習問題: ★★, recommended (total_relation)
+
+二つの自然数のペア同士の間に成り立つ帰納的な関係 total_relation を定義しなさ
+い。
+ *)
+
+Lemma le_dec_R :
+  forall {n m}, n <= S m -> n <= m \/ n = S m.
+(* -> *)
+Proof.
+  intros n m H0.
+  inversion H0 as [ eq | m' H1 eq ].
+  (* le_n *) right. reflexivity.
+  (* le_S *) left.  exact H1.
+Qed.
+
+Lemma le_dec_L :
+  forall {n m}, n <= m \/ n = S m -> n <= S m.
+(* <- *)
+Proof.
+  intros n m H.
+  destruct H as [LE | EQ].
+  (* le *) apply (le_S n m LE).
+  (* eq *) rewrite <- EQ. apply le_n.
+Qed.
+
+Lemma le_dec :
+  forall {n m}, n <= S m <-> n <= m \/ n = S m.
+Proof.
+  split. apply le_dec_R. apply le_dec_L.
+Qed.
+
+Lemma inc_le_trans :
+  forall n m, n <= m <-> S n <= S m.
+Proof.
+  split.
+
+  (* -> *)
+  intros H.
+  induction H as [ EQ | m' LE ].
+  (* EQ *) apply le_n.
+  (* LE *) apply le_S. apply IHLE.
+
+  (* <- *)
+    generalize dependent n.
+    induction m as [| m'].
+    (* m = 0 *)
+      intros n H.
+      inversion H as [eq | m' L].
+      (* le_n *) apply le_n.
+      (* le_S *) inversion L.
+
+    (* m = S m' *)
+      intros n H.
+      destruct (le_dec_R H) as [ LE | EQ ].
+      (* S n >= S m' *) apply le_S. apply IHm'. exact LE.
+      (* S n = S (S m') *) inversion EQ as [ EQ1 ]. apply le_n.
+Qed.
+
+Inductive total_relation (a b:nat) (TotalOrd : nat -> nat -> Prop) : Prop :=
+  total_order : TotalOrd a b \/ TotalOrd b a -> total_relation a b TotalOrd.
+
+Example test_total_relation_1 :
+  forall a b, total_relation a b le.
+Proof.
+  intros a b.
+  apply total_order.
+  generalize dependent b.
+  induction a.
+
+  (* a = 0 *)
+  left. induction b as [| b']. apply le_n. apply le_S. apply IHb'.
+
+  intros b. destruct (IHa b) as [ABH | BAH].
+  (* a <= b *)
+
+
+
+  (* apply total_relation_ind with le. intros a b H. *)
+  (* assert (forall a b, le a b \/ le b a). *)
+  (* intros a b. *)
+  (* induction a as [| a']. *)
+
+Admitted.
+(* ☐ *)
+
+(*
+練習問題: ★★ (empty_relation)
+
+自然数の間では決して成り立たない関係 empty_relation を帰納的に定義しなさい。
+ *)
+
+Inductive empty_relation (a b:nat) : Prop :=
+  empty_relation_0 : a < b /\ b < a -> empty_relation a b.
+
+(* ☐ *)
+
+(*
+練習問題: ★★★, recommended (R_provability)
+ *)
+
+Module R.
+
+(*
+次は三つや四つの値の間に成り立つ関係を同じように定義してみましょう。例えば、
+次のような数値の三項関係が考えられます。
+
+Inductive R : nat → nat → nat → Prop :=
+   | c1 : R 0 0 0
+   | c2 : ∀ m n o, R m n o → R (S m) n (S o)
+   | c3 : ∀ m n o, R m n o → R m (S n) (S o)
+   | c4 : ∀ m n o, R (S m) (S n) (S (S o)) → R m n o
+   | c5 : ∀ m n o, R m n o → R n m o.
+*)
+
+Inductive R : nat -> nat -> nat -> Prop :=
+| c1 : R 0 0 0
+| c2 : forall m n o, R m n o -> R (S m) n (S o)
+| c3 : forall m n o, R m n o -> R m (S n) (S o)
+| c4 : forall m n o, R (S m) (S n) (S (S o)) -> R m n o
+| c5 : forall m n o, R m n o -> R n m o.
+
+(*
+  * 次の命題のうち、この関係を満たすと証明できると言えるのはどれでしょうか。
+      + R 1 1 2
+      + R 2 2 6
+ *)
+
+(* R 1 1 2 *)
+(* R 2 2 6 *)
+
+(*
+  * この関係 R の定義からコンストラクタ c5 を取り除くと、証明可能な命題の範囲
+    はどのように変わるでしょうか？端的に（１文で）説明しなさい。
+ *)
+(*
+  * この関係 R の定義からコンストラクタ c4 を取り除くと、証明可能な命題の範囲
+    はどのように変わるでしょうか？端的に（１文で）説明しなさい。
+ *)
+
+(* ☐ *)
+
+(*
+練習問題: ★★★, optional (R_fact)
+
+関係 R の、等値性に関する特性をあげ、それを証明しなさい。それは、もし R m n o
+が true なら m についてどんなことが言えるでしょうか？ n や o についてはどうで
+しょうか？その逆は？
+ *)
+
+(* true なら -> 真なら *)
+
+(* ☐ *)
+
+End R.
+
+(*
+練習問題: ★★★, recommended (all_forallb)
+
+リストに関する属性 all を定義しなさい。それは、型 X と属性 P : X → Prop をパ
+ラメータとし、 all X P l が「リスト l の全ての要素が属性 P} を満たす」とする
+ものです。
+ *)
+
+(*
+Inductive all (X : Type) (P : X → Prop) : list X → Prop :=
+
+.
+ *)
+
+(*
+Poly.v の練習問題 forall_exists_challenge に出てきた関数 forallb を思い出して
+みましょう。
+
+Fixpoint forallb {X : Type} (test : X → bool) (l : list X) : bool :=
+  match l with
+    | [] => true
+    | x :: l' => andb (test x) (forallb test l')
+  end.
+ *)
+
+(*
+属性 all を使って関数 forallb の仕様を書き、それを満たすことを証明しなさい。
+できるだけその仕様が厳格になるようにすること。
+
+関数 forallb の重要な性質が、あなたの仕様から洩れている、ということはありませ
+んか？
+ *)
+
+(* ☐ *)
+
+(*
+練習問題: ★★★★, optional (filter_challenge)
+
+Coq の主な目的の一つは、プログラムが特定の仕様を満たしていることを証明するこ
+とです。それがどういうことか、filter 関数の定義が仕様を満たすか証明してみまし
+ょう。まず、その関数の仕様を非形式的に書き出してみます。
+
+集合 X と関数 test: X→bool、リストl とその型 list X を想定する。さらに、l が
+二つのリスト l1 と l2 が順序を維持したままマージされたもので、リスト l1 の要
+素はすべて test を満たし、 l2 の要素はすべて満たさないとすると、filter test l
+= l1 が成り立つ。
+
+リスト l が l1 と l2 を順序を維持したままマージしたものである、とは、それが
+l1 と l2 の要素をすべて含んでいて、しかも互いに入り組んではいても l1 、 l2 の
+要素が同じ順序になっている、ということです。例えば、
+
+    [1,4,6,2,3]
+
+は、以下の二つを順序を維持したままマージしたものです。
+    [1,6,2]
+
+と、
+    [4,3]
+
+課題は、この仕様をCoq の定理の形に書き直し、それを証明することです。（ヒント
+：まず、一つのりすとが二つのリストをマージしたものとなっている、ということを
+示す定義を書く必要がありますが、これは帰納的な関係であって、 Fixpoint で書く
+ようなものではありません。）
+ *)
+
+(* ☐ *)
+
+(*
+練習問題: ★★★★★, optional (filter_challenge_2)
+
+filter の振る舞いに関する特性を別の切り口で表すとこうなります。「test の結果
+が true なる要素だけでできた、リスト l のすべての部分リストの中で、filter
+test l が最も長いリストである。」これを形式的に記述し、それを証明しなさい。
+ *)
+(* ☐ *)
+
+(*
+練習問題: ★★★★, optional (no_repeats)
+
+次の、帰納的に定義された命題は、
+
+Inductive appears_in {X:Type} (a:X) : list X → Prop :=
+  | ai_here : ∀ l, appears_in a (a::l)
+  | ai_later : ∀ b l, appears_in a l → appears_in a (b::l).
+
+値 a がリスト l の要素として少なくとも一度は現れるということを言うための、精
+確な方法を与えてくれます。
+
+次の二つはappears_in に関するウォームアップ問題です。
+ *)
+
+Lemma appears_in_app : ∀ {X:Type} (xs ys : list X) (x:X),
+     appears_in x (xs ++ ys) → appears_in x xs ∨ appears_in x ys.
+Proof.
+Admitted.
+
+Lemma app_appears_in : ∀ {X:Type} (xs ys : list X) (x:X),
+     appears_in x xs ∨ appears_in x ys → appears_in x (xs ++ ys).
+Proof.
+Admitted.
+
+(*
+では、 appears_in を使って命題 disjoint X l1 l2 を定義してください。これは、
+型 X の二つのリスト l1 、 l2 が共通の要素を持たない場合にのみ証明可能な命題で
+す。
+
+次は、 appears_in を使って帰納的な命題 no_repeats X l を定義してください。こ
+れは, 型 X のリスト l の中のどの要素も、他の要素と異なっている場合のみ証明で
+きるような命題です。例えば、 no_repeats nat [1,2,3,4] や no_repeats bool []
+は証明可能ですが、 no_repeats nat [1,2,1] や no_repeats bool [true,true] は証
+明できないようなものです。
+
+最後に、disjoint、 no_repeats、 ++ （リストの結合）の三つを使った、何か面白い
+定理を考えて、それを証明してください。
+ *)
+
+(* ☐ *)
+
+(* 少し脱線: <= と < についてのさらなる事実 *)
