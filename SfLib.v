@@ -153,22 +153,97 @@ Proof.
     apply (IHev evH).
 Qed.
 
-(*
+Lemma O_le_n :
+  forall n, 0 <= n.
+Proof.
+  induction n as [| n'].
+  apply le_n.
+  apply le_S.
+  apply IHn'.
+Qed.
+
+Lemma le_dec_R :
+  forall {n m}, n <= S m -> n <= m \/ n = S m.
+(* -> *)
+Proof.
+  intros n m H0.
+  inversion H0 as [ eq | m' H1 eq ].
+  (* le_n *) right. reflexivity.
+  (* le_S *) left.  exact H1.
+Qed.
+
+Lemma le_dec_L :
+  forall {n m}, n <= m \/ n = S m -> n <= S m.
+(* <- *)
+Proof.
+  intros n m H.
+  destruct H as [LE | EQ].
+  (* le *) apply (le_S n m LE).
+  (* eq *) rewrite <- EQ. apply le_n.
+Qed.
+
+Lemma le_dec :
+  forall {n m}, n <= S m <-> n <= m \/ n = S m.
+Proof.
+  split. apply le_dec_R. apply le_dec_L.
+Qed.
+
+Lemma n_le_m__Sn_le_Sm :
+  forall n m, n <= m -> S n <= S m.
+Proof.
+  intros n m H.
+  induction H as [EQ | m' LE].
+  (* EQ *) apply le_n.
+  (* LE *) apply le_S. apply IHLE.
+Qed.
+
+Lemma Sn_le_Sm__n_le_m :
+  forall n m, S n <= S m -> n <= m.
+Proof.
+  intros n m. generalize dependent n.
+  induction m as [| m'].
+  (* m = 0 *)
+    intros n H.
+    inversion H as [eq | m' L].
+    (* le_n *) apply le_n.
+    (* le_S *) inversion L.
+
+  (* m = S m' *)
+    intros n H.
+    destruct (le_dec_R H) as [LE | EQ].
+    (* S n <= S m' *) apply le_S. apply IHm'. apply LE.
+    (* S n = S (S m') *) inversion EQ as [ EQ1 ]. apply le_n.
+Qed.
+
 Theorem ble_nat_true :
   forall n m, ble_nat n m = true -> n <= m.
 Proof.
   induction n as [| n'].
-  (* n = 0 *)
-    induction m as [| m'].
-    (* m = 0 *) intro H. apply le_n.
+  (* n = 0 *) intros m H. apply O_le_n.
+  (* n = S n' *)
+    destruct m as [| m'].
+    (* m = 0 *) intros H. inversion H.
     (* m = S m' *)
-      simpl. intro H. apply le_S.
+      simpl. intros H.
+      apply n_le_m__Sn_le_Sm. apply IHn'.  apply H.
+Qed.
 
-Admitted.
- *)
-
-(*
 Theorem ble_nat_false :
   forall n m, ble_nat n m = false -> ~ (n <= m).
-Admitted.
- *)
+Proof.
+  induction n as [| n'].
+  (* n = 0 *)
+    destruct m as [| m'].
+    (* 0 *)    simpl. intro H. inversion H.
+    (* S m' *) simpl. intro H. inversion H.
+  (* n = S n' *)
+    intros m H.
+    destruct m as [| m'].
+    (* 0 *) intro LE. inversion LE.
+    (* S m' *)
+      simpl in H.
+      intro LE.
+      apply Sn_le_Sm__n_le_m in LE.
+      apply (IHn' m').
+      apply H. apply LE.
+Qed.
