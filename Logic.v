@@ -898,7 +898,7 @@ Proof.
     (* m = S m' *)
       intros n H.
       destruct (le_dec_R H) as [ LE | EQ ].
-      (* S n >= S m' *) apply le_S. apply IHm'. exact LE.
+      (* S n <= S m' *) apply le_S. apply IHm'. exact LE.
       (* S n = S (S m') *) inversion EQ as [ EQ1 ]. apply le_n.
 Qed.
 
