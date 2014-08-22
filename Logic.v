@@ -1013,6 +1013,11 @@ Inductive all (X : Type) (P : X → Prop) : list X → Prop :=
 .
  *)
 
+Inductive all (X : Type) (P : X -> Prop) : list X -> Prop :=
+| all_nil  : all X P []
+| all_cons : forall x xs, P x -> all X P xs -> all X P (x :: xs)
+.
+
 (*
 Poly.v の練習問題 forall_exists_challenge に出てきた関数 forallb を思い出して
 みましょう。
@@ -1090,13 +1095,19 @@ Inductive appears_in {X:Type} (a:X) : list X → Prop :=
 次の二つはappears_in に関するウォームアップ問題です。
  *)
 
-Lemma appears_in_app : ∀ {X:Type} (xs ys : list X) (x:X),
-     appears_in x (xs ++ ys) → appears_in x xs ∨ appears_in x ys.
+Inductive appears_in {X:Type} (a:X) : list X -> Prop :=
+  | ai_here : forall l, appears_in a (a::l)
+  | ai_later : forall b l, appears_in a l -> appears_in a (b::l).
+
+Lemma appears_in_app :
+  forall {X:Type} (xs ys : list X) (x:X),
+     appears_in x (xs ++ ys) -> appears_in x xs \/ appears_in x ys.
 Proof.
 Admitted.
 
-Lemma app_appears_in : ∀ {X:Type} (xs ys : list X) (x:X),
-     appears_in x xs ∨ appears_in x ys → appears_in x (xs ++ ys).
+Lemma app_appears_in :
+  forall {X:Type} (xs ys : list X) (x:X),
+    appears_in x xs \/ appears_in x ys -> appears_in x (xs ++ ys).
 Proof.
 Admitted.
 
@@ -1118,3 +1129,77 @@ Admitted.
 (* ☐ *)
 
 (* 少し脱線: <= と < についてのさらなる事実 *)
+
+(* 練習問題: ★★, optional (le_exercises) *)
+
+Theorem O_le_n :
+  forall n, 0 <= n.
+Proof.
+  induction n as [| n'].
+  apply le_n.
+  apply le_S.
+  apply IHn'.
+Qed.
+
+Theorem n_le_m__Sn_le_Sm :
+  forall n m, n <= m -> S n <= S m.
+Proof.
+  intros n m H.
+  induction H as [EQ | m' LE].
+  (* EQ *) apply le_n.
+  (* LE *) apply le_S. apply IHLE.
+Qed.
+
+Theorem Sn_le_Sm__n_le_m :
+  forall n m, S n <= S m -> n <= m.
+Proof.
+  intros n m. generalize dependent n.
+  induction m as [| m'].
+  (* m = 0 *)
+    intros n H.
+    inversion H as [eq | m' L].
+    (* le_n *) apply le_n.
+    (* le_S *) inversion L.
+
+  (* m = S m' *)
+    intros n H.
+    destruct (le_dec_R H) as [LE | EQ].
+    (* S n <= S m' *) apply le_S. apply IHm'. apply LE.
+    (* S n = S (S m') *) inversion EQ as [ EQ1 ]. apply le_n.
+Qed.
+
+(*
+Theorem le_plus_l : ∀ a b,
+  a <= a + b.
+Proof.
+Admitted.
+
+Theorem plus_lt : ∀ n1 n2 m,
+  n1 + n2 < m →
+  n1 < m ∧ n2 < m.
+Proof.
+Admitted.
+
+Theorem lt_S : ∀ n m,
+  n < m →
+  n < S m.
+Proof.
+Admitted.
+
+Theorem ble_nat_true : ∀ n m,
+  ble_nat n m = true → n <= m.
+Proof.
+Admitted.
+
+Theorem ble_nat_n_Sn_false : ∀ n m,
+  ble_nat n (S m) = false →
+  ble_nat n m = false.
+Proof.
+Admitted.
+
+Theorem ble_nat_false : ∀ n m,
+  ble_nat n m = false → ~(n <= m).
+Proof.
+Admitted.
+ *)
+(* ☐ *)
