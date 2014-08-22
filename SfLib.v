@@ -121,23 +121,21 @@ Proof.
 Theorem not_eq_beq_false :
   forall n n' : nat, n <> n' -> beq_nat n n' = false.
 Proof.
-  intros n m.
-  generalize dependent n.
-  induction m as [| m'].
-  (* m = 0 *)
-    destruct n as [| n' ].
-    (* n = 0 *)
+  induction n as [| k].
+  (* n = 0 *)
+    destruct n' as [| k'].
+    (* n' = 0 *)
       intros H.
       apply ex_falso_quodlibet. apply H.
       reflexivity.
-    (* n = S n' *)
+    (* n = S k' *)
       intros H. reflexivity.
-  (* m = S m' *)
-    destruct n as [| n' ].
+  (* n = S k *)
+    destruct n' as [| k'].
     (* n = 0 *) intros H. reflexivity.
     (* n = S n' *)
       intros H. simpl.
-      apply IHm'.
+      apply IHk.
       intros eq.
       apply H.
       rewrite <- eq.
