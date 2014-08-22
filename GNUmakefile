@@ -8,7 +8,8 @@ sources = \
 	Poly.v		\
 	Gen.v		\
 	Prop.v		\
-	Logic.v
+	Logic.v         \
+	SfLib.v
 
 
 objs = $(sources:.v=.vo)
