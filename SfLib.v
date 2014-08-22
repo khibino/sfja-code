@@ -300,3 +300,73 @@ Proof.
     apply rsc_step with (y:=t).
     apply rST. apply IHcTU. apply cUZ.
 Qed.
+
+Inductive id : Type :=
+  Id : nat -> id.
+
+Definition beq_id id1 id2 :=
+  match (id1, id2) with
+    (Id n1, Id n2) => beq_nat n1 n2
+  end.
+
+Theorem beq_id_refl : forall i,
+  true = beq_id i i.
+Proof.
+  intros. destruct i.
+  apply beq_nat_refl. Qed.
+
+Theorem beq_id_eq : forall i1 i2,
+  true = beq_id i1 i2 -> i1 = i2.
+Proof.
+  intros i1 i2 H.
+  destruct i1. destruct i2.
+  apply beq_nat_eq in H. subst.
+  reflexivity. Qed.
+
+Theorem beq_id_false_not_eq : forall i1 i2,
+  beq_id i1 i2 = false -> i1 <> i2.
+Proof.
+  intros i1 i2 H.
+  destruct i1. destruct i2.
+  apply beq_nat_false in H.
+  intros C. apply H. inversion C. reflexivity. Qed.
+
+Theorem not_eq_beq_id_false : forall i1 i2,
+  i1 <> i2 -> beq_id i1 i2 = false.
+Proof.
+  intros i1 i2 H.
+  destruct i1. destruct i2.
+  assert (n <> n0).
+    intros C. subst. apply H. reflexivity.
+  apply not_eq_beq_false. assumption. Qed.
+
+Theorem beq_id_sym: forall i1 i2,
+  beq_id i1 i2 = beq_id i2 i1.
+Proof.
+  intros i1 i2. destruct i1. destruct i2. apply beq_nat_sym. Qed.
+
+Definition partial_map (A:Type) := id -> option A.
+
+Definition empty {A:Type} : partial_map A := (fun _ => None).
+
+Definition extend {A:Type} (Γ : partial_map A) (x:id) (T : A) :=
+  fun x' => if beq_id x x' then Some T else Γ x'.
+
+Lemma extend_eq : forall A (ctxt: partial_map A) x T,
+  (extend ctxt x T) x = Some T.
+Proof.
+  intros. unfold extend. rewrite <- beq_id_refl. auto.
+Qed.
+
+Lemma extend_neq : forall A (ctxt: partial_map A) x1 T x2,
+  beq_id x2 x1 = false ->
+  (extend ctxt x2 T) x1 = ctxt x1.
+Proof.
+  intros. unfold extend. rewrite H. auto.
+Qed.
+
+Lemma extend_shadow : forall A (ctxt: partial_map A) t1 t2 x1 x2,
+  extend (extend ctxt x2 t1) x2 t2 x1 = extend ctxt x2 t2 x1.
+Proof with auto.
+  intros. unfold extend. destruct (beq_id x2 x1)...
+Qed.
