@@ -377,7 +377,7 @@ Tactic Notation "solve_by_inversion_step" tactic(t) :=
   match goal with
   | H : _ |- _ => solve [ inversion H; subst; t ]
   end
-  (* ⇓ fail "because the goal is not solvable by inversion." *).
+    || fail "because the goal is not solvable by inversion.".
 
 Tactic Notation "solve" "by" "inversion" "1" :=
   solve_by_inversion_step idtac.
