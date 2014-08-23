@@ -1007,12 +1007,6 @@ End R.
 ものです。
  *)
 
-(*
-Inductive all (X : Type) (P : X → Prop) : list X → Prop :=
-
-.
- *)
-
 Inductive all (X : Type) (P : X -> Prop) : list X -> Prop :=
 | all_nil  : all X P []
 | all_cons : forall x xs, P x -> all X P xs -> all X P (x :: xs)
@@ -1036,6 +1030,34 @@ Fixpoint forallb {X : Type} (test : X → bool) (l : list X) : bool :=
 関数 forallb の重要な性質が、あなたの仕様から洩れている、ということはありませ
 んか？
  *)
+
+Theorem all_forallb :
+  forall {X} (test : X -> bool) (xs : list X),
+    forallb test xs = true <-> all X (fun x => test x = true) xs.
+Proof.
+  intros X test xs. split.
+
+  (* -> *)
+  induction xs as [| x xs'].
+  (* [] *)  intros EQ. apply all_nil.
+  (* x :: xs' *)
+    simpl.
+    intros EQ.
+    destruct (test x) as [] eqn: TxH.
+    (* true *)
+      apply all_cons. apply TxH.
+      apply IHxs'. apply EQ.
+    (* false *) inversion EQ.
+
+  (* <- *)
+  induction xs as [| x xs'].
+  (* [] *) reflexivity.
+  (* x :: xs' *)
+    intros H.
+    inversion H as [| P AP].
+    simpl. rewrite -> H2.
+    apply IHxs'. apply H3.
+Qed.
 
 (* ☐ *)
 
