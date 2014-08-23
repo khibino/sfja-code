@@ -1270,3 +1270,129 @@ Proof.
       apply H. apply LE.
 Qed.
 (* ☐ *)
+
+
+(* 練習問題: ★★★, recommended (nostutter) *)
+
+(*
+述語の帰納的な定義を定式化できるようになるというのは、これから先の学習に必要なスキ
+ルになってきます。
+
+この練習問題は、何の力も借りず自力で解いてください。もし誰かの力を借りてしまった場
+合は、そのことをコメントに書いておいてください。
+
+同じ数値が連続して現れるリストを "stutters" （どもったリスト）と呼ぶことにします。
+述語 "nostutter mylist" は、 mylist が「どもったリスト」でないことを意味しています
+。nostutter の帰納的な定義を記述しなさい。（これは以前の練習問題に出てきた
+no_repeats という述語とは異なるものです。リスト 1,4,1 は repeats ではありますが
+stutter ではありません。）
+ *)
+
+Inductive nostutter: list nat -> Prop :=
+
+.
+
+(*
+できた定義が、以下のテストを通過することを確認してください。通過できないものがあっ
+たら、定義を修正してもかまいません。あなたの書いた定義が、正しくはあるけれど私の用
+意した模範解答と異なっているかもしれません。その場合、このテストを通過するために別
+の証明を用意する必要があります。
+
+以下の Example にコメントとして提示された証明には、色々な種類の nostutter の定義に
+対応できるようにするため、まだ説明していないタクティックがいくつか使用されています
+。まずこれらのコメントをはずしただけの状態で確認できればいいのですが、もしそうした
+いなら、これらの証明をもっと基本的なタクティックで書き換えて証明してもかまいません
+。
+ *)
+
+Example test_nostutter_1: nostutter [3,1,4,1,5,6].
+Admitted.
+
+Example test_nostutter_2: nostutter [].
+Admitted.
+
+Example test_nostutter_3: nostutter [5].
+Admitted.
+
+Example test_nostutter_4: not (nostutter [3,1,1,4]).
+Admitted.
+(* ☐ *)
+
+(* 練習問題: ★★★★, optional (pigeonhole principle) *)
+
+(*
+「鳩の巣定理（ "pigeonhole principle" ）」は、「数えるあげる」ということについての
+基本的な事実を提示しています。「もし n 個の鳩の巣に n 個より多い数のものを入れよう
+とするなら、どのような入れ方をしてもいくつかの鳩の巣には必ず一つ以上のものが入るこ
+とになる。」というもので、この、数値に関する見るからに自明な事実を証明するにも、な
+かなか自明とは言えない手段が必要になります。我々は既にそれを知っているのですが...
+
+まず、補題を二つほど証明しておきます。（既に数値のリストについては証明済みのもので
+すが、任意のリストについてはのものはまだないので）
+ *)
+
+Lemma app_length :
+  forall {X:Type} (l1 l2 : list X),
+    length (l1 ++ l2) = length l1 + length l2.
+Proof.
+Admitted.
+
+Lemma appears_in_app_split :
+  forall {X:Type} (x:X) (l:list X),
+    appears_in x l ->
+    exists l1, exists l2, l = l1 ++ (x::l2).
+Proof.
+Admitted.
+
+(*
+そして、述語 repeats の定義をします（以前の練習問題 no_repeats に類似したものです
+）。それは repeats X l が、「 l の中に少なくとも一組の同じ要素（型 X の）を含む」
+という主張となるようなものです。
+ *)
+
+Inductive repeats {X:Type} : list X -> Prop :=
+
+.
+
+(*
+この「鳩の巣定理」を定式化する方法を一つ挙げておきましょう。リスト l2 が鳩の巣に貼
+られたラベルの一覧を、リスト l1 はそのラベルの、アイテムへの割り当ての一覧を表して
+いるとします。もしラベルよりも沢山のアイテムがあったならば、少なくとも二つのアイテ
+ムに同じラベルが貼られていることになります。おそらくこの証明には「排中律（
+excluded_middle ）」が必要になるでしょう。
+ *)
+
+Theorem pigeonhole_principle:
+  forall {X:Type} (l1 l2:list X),
+    excluded_middle ->
+    (forall x, appears_in x l1 -> appears_in x l2) ->
+    length l2 < length l1 ->
+    repeats l1.
+Proof. intros X l1. induction l1.
+Admitted.
+(* ☐ *)
+
+(* 選択課題 *)
+
+(* ∧ や ∨ のための帰納法の原理 *)
+
+(* 練習問題: ★ (and_ind_principle) *)
+
+(*
+連言（ conjunction ）についての帰納法の原理を予想して、確認しなさい。
+ *)
+
+(* ☐ *)
+
+(* 練習問題: ★ (or_ind_principle) *)
+
+(*
+選言（ disjunction ）についての帰納法の原理を予想して、確認しなさい。
+ *)
+
+(* ☐ *)
+
+Check and_ind.
+
+
+(* 帰納法のための明白な証明オブジェクト *)
