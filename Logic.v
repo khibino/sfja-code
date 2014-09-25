@@ -993,6 +993,75 @@ Inductive R : nat -> nat -> nat -> Prop :=
 しょうか？その逆は？
  *)
 
+Theorem m_plus_n_eq_o_left :
+  forall m n o, R m n o -> m + n = o.
+Proof.
+  intros m n o H.
+  induction H as [| m' n' o' H101 |  m' n' o' H011 |  m' n' o' H112 |  m' n' o' Hswap ].
+  (* c1 *) reflexivity.
+  (* c2 *) simpl. rewrite -> IHH101. reflexivity.
+  (* c3 *) rewrite <- (plus_n_Sm m' n'). rewrite -> IHH011. reflexivity.
+  (* c4 *)
+    simpl in IHH112. rewrite <- (plus_n_Sm m' n') in IHH112.
+    inversion IHH112. reflexivity.
+  (* c5 *) rewrite -> plus_comm. apply IHHswap.
+Qed.
+
+Lemma m_plus_n_O' :
+  forall m n, m + n = 0 -> m = 0.
+Proof.
+  destruct m as [| m'].
+  (* m = 0 *) reflexivity.
+  (* m = S m' *)
+    intros n H.
+    simpl in H. inversion H.
+Qed.
+
+Lemma m_plus_n_O :
+  forall m n, m + n = 0 -> m = 0 /\ n = 0.
+Proof.
+  split.
+
+  (* m = 0 *)
+  apply (m_plus_n_O' m n).
+  exact H.
+
+  (* n = 0 *)
+  rewrite -> (plus_comm m n) in H.
+  apply (m_plus_n_O' n m).
+  exact H.
+Qed.
+
+Theorem m_plus_n_eq_o_right :
+  forall m n o, m + n = o -> R m n o.
+Proof.
+  intros m n o H.
+  generalize dependent m.
+  generalize dependent n.
+
+  induction o as [| o'].
+  (* o = 0 *)
+    intros n m H.
+    apply m_plus_n_O in H. inversion H.
+    rewrite -> H0. rewrite -> H1.
+    apply c1.
+
+  (* o = S o' *)
+    intros n m H.
+
+    (* c2 *)
+      destruct m as [| m'].
+      (* m = 0*)
+        destruct n as [| n'].
+        (* n = 0 *) inversion H.
+        (* n = S n'*)
+        simpl in H. apply c3. apply (IHo' n' 0). inversion H. reflexivity.
+
+      (* m = S m' *)
+        apply c2. apply IHo'. simpl in H. inversion H. reflexivity.
+Qed.
+
+
 (* true なら -> 真なら *)
 
 (* ☐ *)
@@ -1091,6 +1160,56 @@ l1 と l2 の要素をすべて含んでいて、しかも互いに入り組ん�
 ようなものではありません。）
  *)
 
+Inductive in_order_merge {X:Type} : list X -> list X -> list X -> Prop :=
+| merge_nil : in_order_merge [] [] []
+| merge_cons_L : forall (x:X) (l1 l2 l : list X),
+                 in_order_merge l1 l2 l -> in_order_merge (x::l1) l2 (x::l)
+| merge_cons_R : forall (x:X) (l1 l2 l : list X),
+                 in_order_merge l1 l2 l -> in_order_merge l1 (x::l2) (x::l)
+.
+
+(*
+集合 X と関数 test: X→bool、リストl とその型 list X を想定する。さらに、l が
+二つのリスト l1 と l2 が順序を維持したままマージされたもので、リスト l1 の要
+素はすべて test を満たし、 l2 の要素はすべて満たさないとすると、filter test l
+= l1 が成り立つ。
+ *)
+
+Theorem filter_challenge :
+  forall {X:Type} (test : X -> bool) (l l1 l2 : list X),
+    in_order_merge l1 l2 l ->
+    all X (fun x => test x = true) l1 ->
+    all X (fun x => test x = false) l2 ->
+    filter test l = l1.
+Proof.
+  intros X test.
+  induction l as [| x xs] eqn: LEQ.
+  (* [] *) intros l1 l2 M. inversion M. reflexivity.
+  (* x :: xs*)
+    intros l1 l2 M T F.
+    inversion M as [| x0 xsL xsR xs0 ML | x0 xsL xsR xs0 MR].
+    (* L *)
+      (* subst x0 xs0 xsR. *)
+      rewrite -> H2 in H.
+      rewrite -> H.
+      inversion T as [| x1 xs1 p T' ].
+      (* all_nil *) rewrite <- H1 in H. inversion H.
+      (* all_cons *)
+        rewrite <- H1 in H.
+        inversion H.
+        simpl. rewrite -> p0.
+
+    (* (* merge_nil *) reflexivity. *)
+    (* merge_cons_L *)
+    (*
+      intros T F.
+
+      simpl. rewrite -> H1.
+      f_equal.
+      apply (IHxs xl1).
+     *)
+    (* merge_cons_R *)
+Admitted.
 (* ☐ *)
 
 (*
