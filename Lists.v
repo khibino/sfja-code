@@ -552,7 +552,7 @@ Proof.
   intros s. induction s as [| n s'].
   Case "s = nil". reflexivity.
   Case "s = cons n s'".
-    simpl. destruct (beq_nat n 0) as [] _eqn: H.
+    simpl. destruct (beq_nat n 0) as [] eqn: H.
     SCase "beq_nat n 0 = true".
       rewrite -> ble_n_Sn. reflexivity.
     SCase "beq_nat n 0 = false".

@@ -1064,20 +1064,20 @@ Proof.
         SCase "e5 = false".
           inversion eq. Qed.
 
-(* destruct ... as ... _eqn: ... による別解 *)
+(* destruct ... as ... eqn: ... による別解 *)
 Theorem sillyfun1_odd' :
   forall (n : nat),
     sillyfun1 n = true ->
     oddb n = true.
 Proof.
   intros n eq. unfold sillyfun1 in eq.
-  destruct (beq_nat n 3) as [|] _eqn: Heqe3.
+  destruct (beq_nat n 3) as [|] eqn: Heqe3.
     Case "beq_nat n 3 = true".
       (* rewrite -> (beq_nat_eq n 3 (eq_sym Heqe3)). *)
       symmetry in Heqe3. apply beq_nat_eq in Heqe3.
       rewrite -> Heqe3. reflexivity.
     Case "beq_nat n 3 = false".
-      destruct (beq_nat n 5) as [|] _eqn: Heqe5.
+      destruct (beq_nat n 5) as [|] eqn: Heqe5.
         SCase "beq_nat n 5 = true".
           symmetry in Heqe5. apply beq_nat_eq in Heqe5.
           rewrite -> Heqe5. reflexivity.
@@ -1205,10 +1205,10 @@ Theorem override_permute :
 Proof.
   intros.
   unfold override.
-  destruct (beq_nat k1 k3) as [|] _eqn: Hd13.
+  destruct (beq_nat k1 k3) as [|] eqn: Hd13.
   (* Hd13 = true *)
     symmetry in Hd13. apply beq_nat_eq in Hd13.
-    destruct (beq_nat k2 k3) as [|] _eqn: Hd23.
+    destruct (beq_nat k2 k3) as [|] eqn: Hd23.
     (* Hd23 = true *)
       symmetry in Hd23. apply beq_nat_eq in Hd23.
       rewrite -> Hd13 in H. rewrite -> Hd23 in H.

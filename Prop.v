@@ -1248,7 +1248,7 @@ Proof.
   (* l = [] *)  apply rev_eq_0.
   (* l = x :: xs *)
     simpl in req.
-    destruct (rev xs) as [| x' r] _eqn: req1.
+    destruct (rev xs) as [| x' r] eqn: req1.
     (* rev xs = [] *)
       simpl in req. rewrite -> req. apply rev_eq_1.
     (* rev xs = x' :: r *)
