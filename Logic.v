@@ -1536,4 +1536,20 @@ Admitted.
 Check and_ind.
 
 
+Inductive or' (P Q : Prop) : Prop :=
+| or'_introl : P -> or' P Q
+| or'_intror : Q -> or' P Q
+.
+
+Check or'_ind.
+
+Definition nrect :=
+fun (P : nat -> Type) (f : P 0)
+    (f0 : forall n : nat, P n -> P(S n)) =>
+  fix F (n : nat) : P n :=
+  match n return (P n) with
+    | 0 => f
+    | S n0 => f0 n0 (F n0)
+  end.
+
 (* 帰納法のための明白な証明オブジェクト *)
