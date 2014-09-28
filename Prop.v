@@ -1403,12 +1403,55 @@ Qed.
 Theorem subseq_trans :
   forall (l1 l2 l3:list nat), subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
 Proof.
-  intros l1 l2.
+  intros l1 l2 l3.
+  generalize dependent l2.
   generalize dependent l1.
+  induction l3 as [| x3 xs3 IHl3].
+  (* [] *)
+    intros l1 l2 H12 H23.
+    inversion H23 as [ys | x ys xs Hst | x ys xs Hsa ].
+    subst l2 ys.
+    inversion H12.
+    exact (subseq_0 []).
+  (* x::xs *)
+    intros l1 l2 H12 H23.
+    inversion H23 as [ys | x ys xs H23st | x ys xs H23sa ].
+    (* 0 *)
+      subst l2 ys.
+      inversion H12. exact (subseq_0 (x3 :: xs3)).
+    (* tail *)
+      subst l2 x3 xs3.
+      inversion H12 as [ys1 | x1 ys1 xs1 H12st | x1 ys1 xs1 H12sa].
+      (* 0 *) subst l1 ys1. exact (subseq_0 (x :: xs)).
+      (* tail *)
+        subst x1 xs1 l1.
+        apply subseq_tail.
+        apply (IHl3 ys1 ys).
+        exact H12st.
+        exact H23st.
+      (* all *)
+        subst x1 xs1 l1.
+        apply subseq_all.
+        apply (IHl3 ys1 ys).
+        exact H12sa.
+        exact H23st.
 
-  induction l2 as [| x xs].
-Admitted.
-
+    (* all *)
+      subst l2 x3 xs3.
+      inversion H12 as [ys1 | x1 ys1 xs1 H12st | x1 ys1 xs1 H12sa].
+      (* 0 *) subst l1 ys1. exact (subseq_0 (x :: xs)).
+      (* tail *)
+        rewrite -> H.
+        apply subseq_all.
+        apply (IHl3 l1 ys).
+        exact H12.
+        exact H23sa.
+      (* all *)
+        apply subseq_all.
+        apply (IHl3 l1 ys).
+        exact H12.
+        exact H23sa.
+Qed.
 (* ☐ *)
 
 (*
