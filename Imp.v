@@ -194,6 +194,52 @@ bexpに現れるaexpをすべて変換するために optimize_0plusが適用で
 能な限りエレガントにしなさい。
  *)
 
+Fixpoint optimize_0plus_b (e:bexp) : bexp :=
+  match e with
+    | BEq a1 a2  => BEq (optimize_0plus a1) (optimize_0plus a2)
+    | BLe a1 a2  => BLe (optimize_0plus a1) (optimize_0plus a2)
+    | BNot b1    => BNot (optimize_0plus_b b1)
+    | BAnd b1 b2 => BAnd (optimize_0plus_b b1) (optimize_0plus_b b2)
+    | e          => e
+  end.
+
+Tactic Notation "bexp_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "BTrue" | Case_aux c "BFalse"
+  | Case_aux c "BEq"   | Case_aux c "BLe"
+  | Case_aux c "BNot"  | Case_aux c "BAnd"
+  ].
+
+Theorem optimize_0plus_b_sound:
+  forall e, beval (optimize_0plus_b e) = beval e.
+Proof.
+  bexp_cases (induction e
+               as [ | | a0 a1 | a0 a1 | b IHb | b0 IHb0 b1 IHb1 ])
+             Case
+  ; simpl
+  ; try (rewrite -> (optimize_0plus_sound a0) ;
+         rewrite -> (optimize_0plus_sound a1) )
+  ; [ | | | | rewrite -> IHb | rewrite -> IHb0 ; rewrite IHb1 ]
+  ; reflexivity.
+Qed.
+  (*
+  induction e.
+  (* BTrue  *) simpl. reflexivity.
+  (* BFalse *) simpl. reflexivity.
+  (* BEq *)
+    simpl.
+    rewrite -> (optimize_0plus_sound a).
+    rewrite -> (optimize_0plus_sound a0).
+    reflexivity.
+  (* BLe *)
+    simpl.
+    rewrite -> (optimize_0plus_sound a).
+    rewrite -> (optimize_0plus_sound a0).
+    reflexivity.
+  (* BNot *) simpl. rewrite -> IHe. reflexivity.
+  (* BAnd *) simpl. rewrite -> IHe1. rewrite -> IHe2. reflexivity.
+   *)
+
 (* ☐ *)
 
 (* 練習問題: ★★★★, optional (optimizer) *)
