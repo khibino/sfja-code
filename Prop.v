@@ -1378,37 +1378,27 @@ Qed.
 
 Inductive subseq : list nat -> list nat -> Prop :=
 | subseq_0 : forall (l:list nat), subseq [] l
-| subseq_rec0 : forall (x:nat) (l xs:list nat), subseq l xs -> subseq l (x::xs)
-| subseq_rec1 : forall (x:nat) (l xs:list nat), subseq l xs -> subseq (x::l) (x::xs)
+| subseq_tail : forall (x:nat) (l xs:list nat), subseq l xs -> subseq (x::l) (x::xs)
+| subseq_all  : forall (x:nat) (l xs:list nat), subseq l xs -> subseq l (x::xs)
 .
 
 Theorem subseq_refl :
   forall (l:list nat), subseq l l.
 Proof.
-  intro l.
-  induction l as [| x xs].
+  induction l as [| x xs IHl].
   (* [] *) apply subseq_0.
-  (* x::xs *) apply subseq_rec1. apply IHxs.
+  (* x::xs *) apply subseq_tail. exact IHl.
 Qed.
 
 Theorem subseq_app :
   forall (l1 l2 l3:list nat), subseq l1 l2 -> subseq l1 (l2 ++ l3).
 Proof.
   intros l1 l2 l3 s.
-  induction s as [l | x l xs s0 | x l xs s1].
+  induction s as [l | x l xs st IHst | x l xs sa IHsa ].
   (* 0 *) apply subseq_0.
-  (* rec0 *) simpl. apply subseq_rec0. apply IHs0.
-  (* rec1 *) simpl. apply subseq_rec1. apply IHs1.
+  (* tail *) simpl. apply subseq_tail. apply IHst.
+  (* all  *) simpl. apply subseq_all.  apply IHsa.
 Qed.
-
-Lemma app_subseq_L :
-  forall (l1 l2 l3:list nat), subseq (l1 ++ l2) l3 -> subseq l1 l3.
-Proof.
-  intros l1 l2 l3 s.
-  induction l3 as [| x xs].
-  induction l1 as [| x xs].
-  (* l1 = [] *) apply subseq_0.
-Admitted.
 
 Theorem subseq_trans :
   forall (l1 l2 l3:list nat), subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
