@@ -447,7 +447,35 @@ Qed.
 Theorem beq_id_sym:
   forall i1 i2, beq_id i1 i2 = beq_id i2 i1.
 Proof.
-Admitted.
+  intros i1 i2.
+  assert (forall a b, a = b -> beq_id a b = true).
+    intros a b EQ.
+    rewrite -> EQ.
+    rewrite <- (beq_id_refl b).
+    reflexivity.
+
+  destruct (beq_id i1 i2) as [|] eqn: LE.
+
+    destruct (beq_id i2 i1) as [|] eqn: RE.
+
+    (* t t *) reflexivity.
+    (* t f *)
+      symmetry in LE.
+      apply beq_id_eq in LE.
+      rewrite <- LE in RE.
+      rewrite <- beq_id_refl in RE.
+      discriminate RE.
+
+    destruct (beq_id i2 i1) as [|] eqn: RE.
+    (* f t *)
+      symmetry in RE.
+      apply beq_id_eq in RE.
+      rewrite RE in LE.
+      rewrite <- beq_id_refl in LE.
+      discriminate LE.
+
+    (* f f *) reflexivity.
+Qed.
 (* ☐ *)
 
 End Id.
