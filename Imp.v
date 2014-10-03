@@ -497,7 +497,11 @@ Definition update (st : state) (X:id) (n : nat) : state :=
 Theorem update_eq :
   forall n X st, (update st X n) X = n.
 Proof.
-Admitted.
+  intros n X st.
+  unfold update.
+  rewrite <- (beq_id_refl X).
+  reflexivity.
+Qed.
 (* ☐ *)
 
 (* 練習問題: ★★, optional (update_neq) *)
@@ -507,7 +511,11 @@ Theorem update_neq :
     beq_id V2 V1 = false ->
     (update st V2 n) V1 = (st V1).
 Proof.
-Admitted.
+  intros V2 V1 n st FH.
+  unfold update.
+  rewrite -> FH.
+  reflexivity.
+Qed.
 (* ☐ *)
 
 (* 練習問題: ★★, optional (update_example) *)
