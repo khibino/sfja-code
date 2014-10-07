@@ -10,7 +10,8 @@ sources = \
 	Prop.v		\
 	Logic.v         \
 	SfLib.v         \
-	Imp.v
+	Imp.v           \
+	Equiv.v
 
 
 objs = $(sources:.v=.vo)
