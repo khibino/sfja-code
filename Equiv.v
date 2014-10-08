@@ -209,3 +209,30 @@ Proof.
     (* then *) assumption.
 Qed.
 (* ☐ *)
+
+
+Theorem WHILE_false : forall b c,
+     bequiv b BFalse ->
+     cequiv
+       (WHILE b DO c END)
+       SKIP.
+Proof.
+  intros b c Hb. split; intros H.
+  Case "->".
+    inversion H; subst.
+    SCase "E_WhileEnd".
+      apply E_Skip.
+    SCase "E_WhileLoop".
+      rewrite Hb in H2. inversion H2.
+  Case "<-".
+    inversion H; subst.
+    apply E_WhileEnd.
+    rewrite Hb.
+    reflexivity. Qed.
+
+(* 練習問題: ★★ (WHILE_false_informal) *)
+(*
+WHILE_falseの非形式的証明を記述しなさい。
+ *)
+
+(* ☐ *)
