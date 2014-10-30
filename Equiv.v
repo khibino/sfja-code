@@ -274,3 +274,29 @@ Proof.
  *)
 
 (* ☐ *)
+
+(* 練習問題: ★★, recommended (WHILE_true) *)
+
+(*
+ここでWHILE_true_nontermを使いなさい。
+ *)
+
+Theorem WHILE_true: forall b c,
+     bequiv b BTrue ->
+     cequiv
+       (WHILE b DO c END)
+       (WHILE BTrue DO SKIP END).
+Proof.
+  intros b c Hb.
+  split.
+    (* -> *)
+    intros H.
+    apply WHILE_true_nonterm in H.
+    inversion H. apply Hb.
+
+    (* <- *)
+    intros H.
+    apply WHILE_true_nonterm in H.
+    inversion H. intros st''. reflexivity.
+Qed.
+(* ☐ *)
