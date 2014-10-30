@@ -249,3 +249,28 @@ WHILE_falseの非形式的証明を記述しなさい。
       したがって WHILE b DO c END / st || st'
  *)
 (* ☐ *)
+
+Lemma WHILE_true_nonterm :
+  forall b c st st',
+    bequiv b BTrue ->
+    ~( (WHILE b DO c END) / st || st').
+Proof.
+  intros b c st st' Hb.
+  intros H.
+  remember (WHILE b DO c END) as cw.
+  ceval_cases (induction H) Case;
+
+    inversion Heqcw; subst; clear Heqcw.
+  Case "E_WhileEnd".    rewrite Hb in H. inversion H.
+  Case "E_WhileLoop".   apply IHceval2. reflexivity. Qed.
+
+
+(* 練習問題: ★★, optional (WHILE_true_nonterm_informal) *)
+
+(* 補題WHILE_true_nontermが意味するものを日本語で書きなさい。 *)
+
+(*
+ b が真に解釈されるとき、 (WHILE b DO c END) は、あらゆる状態を遷移しえない。
+ *)
+
+(* ☐ *)
