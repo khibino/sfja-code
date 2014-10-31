@@ -415,3 +415,63 @@ Proof.
   rewrite update_same. reflexivity. reflexivity.
 Qed.
 (* ☐ *)
+
+Lemma refl_aequiv : forall (a : aexp), aequiv a a.
+Proof.
+  intros a st. reflexivity. Qed.
+
+Lemma sym_aequiv :
+  forall (a1 a2 : aexp),
+    aequiv a1 a2 -> aequiv a2 a1.
+Proof.
+  intros a1 a2 H. intros st. symmetry. apply H. Qed.
+
+Lemma trans_aequiv :
+  forall (a1 a2 a3 : aexp),
+    aequiv a1 a2 -> aequiv a2 a3 -> aequiv a1 a3.
+Proof.
+  unfold aequiv. intros a1 a2 a3 H12 H23 st.
+  rewrite (H12 st). rewrite (H23 st). reflexivity. Qed.
+
+Lemma refl_bequiv : forall (b : bexp), bequiv b b.
+Proof.
+  unfold bequiv. intros b st. reflexivity. Qed.
+
+Lemma sym_bequiv : forall (b1 b2 : bexp),
+  bequiv b1 b2 -> bequiv b2 b1.
+Proof.
+  unfold bequiv. intros b1 b2 H. intros st. symmetry. apply H. Qed.
+
+Lemma trans_bequiv : forall (b1 b2 b3 : bexp),
+  bequiv b1 b2 -> bequiv b2 b3 -> bequiv b1 b3.
+Proof.
+  unfold bequiv. intros b1 b2 b3 H12 H23 st.
+  rewrite (H12 st). rewrite (H23 st). reflexivity. Qed.
+
+Lemma refl_cequiv : forall (c : com), cequiv c c.
+Proof.
+  unfold cequiv. intros c st st'. apply iff_refl. Qed.
+
+Lemma sym_cequiv : forall (c1 c2 : com),
+  cequiv c1 c2 -> cequiv c2 c1.
+Proof.
+  unfold cequiv. intros c1 c2 H st st'.
+  assert (c1 / st || st' <-> c2 / st || st') as H'.
+    SCase "Proof of assertion". apply H.
+  apply iff_sym. assumption.
+Qed.
+
+Lemma iff_trans : forall (P1 P2 P3 : Prop),
+  (P1 <-> P2) -> (P2 <-> P3) -> (P1 <-> P3).
+Proof.
+  intros P1 P2 P3 H12 H23.
+  inversion H12. inversion H23.
+  split; intros A.
+    apply H1. apply H. apply A.
+    apply H0. apply H2. apply A. Qed.
+
+Lemma trans_cequiv : forall (c1 c2 c3 : com),
+  cequiv c1 c2 -> cequiv c2 c3 -> cequiv c1 c3.
+Proof.
+  unfold cequiv. intros c1 c2 c3 H12 H23 st st'.
+  apply iff_trans with (c2 / st || st'). apply H12. apply H23. Qed.
