@@ -347,3 +347,71 @@ Proof.
     assumption. assumption. assumption.
 Qed.
 (* ☐ *)
+
+Theorem identity_assignment_first_try :
+  forall (X:id),
+    cequiv
+      (X ::= AId X)
+      SKIP.
+Proof.
+  intros. split; intro H.
+  Case "->".
+  inversion H; subst. simpl.
+  replace (update st X (st X)) with st.
+  constructor.
+Admitted.
+
+Axiom functional_extensionality : forall {X Y: Type} {f g : X -> Y},
+    (forall (x: X), f x = g x) -> f = g.
+
+Theorem identity_assignment :
+  forall (X:id),
+    cequiv
+      (X ::= AId X)
+      SKIP.
+Proof.
+  intros. split; intro H.
+    Case "->".
+      inversion H; subst. simpl.
+      replace (update st X (st X)) with st.
+      constructor.
+      apply functional_extensionality. intro.
+      rewrite update_same; reflexivity.
+    Case "<-".
+      inversion H; subst.
+      assert (st' = (update st' X (st' X))).
+         apply functional_extensionality. intro.
+         rewrite update_same; reflexivity.
+      rewrite H0 at 2.
+      constructor. reflexivity.
+Qed.
+
+(* 練習問題: ★★, recommended (assign_aequiv) *)
+
+Theorem assign_aequiv :
+  forall X e,
+    aequiv (AId X) e ->
+    cequiv SKIP (X ::= e).
+Proof.
+  intros X e aH.
+  (* unfold aequiv in eqH. *)
+  split; intro cH.
+
+  (* -> *)
+  inversion cH; subst.
+  assert (st' = (update st' X (st' X))).
+    apply functional_extensionality. intro.
+    rewrite update_same; reflexivity.
+  rewrite -> H at 2.
+  constructor.
+  rewrite <- (aH st'). reflexivity.
+
+  (* <- *)
+  inversion cH; subst.
+  rewrite <- (aH st). simpl.
+  replace (update st X (st X)) with st.
+  constructor.
+  apply functional_extensionality. intro.
+  rewrite update_same. reflexivity. reflexivity.
+Qed.
+(* ☐ *)
