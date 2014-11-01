@@ -937,3 +937,41 @@ admit.
     rewrite IHb1. rewrite IHb2.
     destruct b1'; destruct b2'; reflexivity. Qed.
 (* ☐ *)
+
+(** **** 練習問題: ★★★ (fold_constants_com_sound) *)
+(** 次の証明の[WHILE]の場合を完成させなさい。*)
+
+Theorem fold_constants_com_sound :
+  ctrans_sound fold_constants_com.
+Proof.
+  unfold ctrans_sound. intros c.
+  com_cases (induction c) Case; simpl.
+  Case "SKIP". apply refl_cequiv.
+  Case "::=". apply CAss_congruence. apply fold_constants_aexp_sound.
+  Case ";". apply CSeq_congruence; assumption.
+  Case "IFB".
+    assert (bequiv b (fold_constants_bexp b)).
+      SCase "Pf of assertion". apply fold_constants_bexp_sound.
+    remember (fold_constants_bexp b) as b'.
+    destruct b';
+      (* If the optimization doesn't eliminate the if, then the result
+         is easy to prove from the IH and fold_constants_bexp_sound *)
+      try (apply CIf_congruence; assumption).
+    SCase "b always true".
+      apply trans_cequiv with c1; try assumption.
+      apply IFB_true; assumption.
+    SCase "b always false".
+      apply trans_cequiv with c2; try assumption.
+      apply IFB_false; assumption.
+  Case "WHILE".
+    assert (bequiv b (fold_constants_bexp b)).
+      SCase "Pf of assertion". apply fold_constants_bexp_sound.
+    remember (fold_constants_bexp b) as b'.
+    destruct b';
+      try (apply CWhile_congruence; assumption).
+    SCase "b is true".
+      apply WHILE_true. assumption.
+    SCase "b is false".
+      apply WHILE_false. assumption.
+Qed.
+(** [] *)
