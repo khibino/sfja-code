@@ -625,6 +625,33 @@ Proof.
 Qed.
 (** [] *)
 
+(** 同値である2つのプログラムとその同値の証明の例です... *)
+
+Example congruence_example:
+  cequiv
+    (X ::= ANum 0;
+     IFB (BEq (AId X) (ANum 0))
+     THEN
+       Y ::= ANum 0
+     ELSE
+       Y ::= ANum 42
+     FI)
+    (X ::= ANum 0;
+     IFB (BEq (AId X) (ANum 0))
+     THEN
+       Y ::= AMinus (AId X) (AId X)   (* <--- changed here *)
+     ELSE
+       Y ::= ANum 42
+     FI).
+Proof.
+  apply CSeq_congruence.
+    apply refl_cequiv.
+    apply CIf_congruence.
+      apply refl_bequiv.
+      apply CAss_congruence. unfold aequiv. simpl.
+        symmetry. apply minus_diag.
+      apply refl_cequiv.
+Qed.
 
 (* ケーススタディ: 定数畳み込み *)
 
