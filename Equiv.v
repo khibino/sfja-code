@@ -416,6 +416,11 @@ Proof.
 Qed.
 (* ☐ *)
 
+
+(* 振る舞い同値の性質 *)
+
+(* 振る舞い同値は同値関係である *)
+
 Lemma refl_aequiv : forall (a : aexp), aequiv a a.
 Proof.
   intros a st. reflexivity. Qed.
@@ -475,3 +480,244 @@ Lemma trans_cequiv : forall (c1 c2 c3 : com),
 Proof.
   unfold cequiv. intros c1 c2 c3 H12 H23 st st'.
   apply iff_trans with (c2 / st || st'). apply H12. apply H23. Qed.
+
+(* 振る舞い同値は合同関係である *)
+
+Theorem CAss_congruence :
+  forall i a1 a1',
+    aequiv a1 a1' ->
+    cequiv (CAss i a1) (CAss i a1').
+Proof.
+  intros i a1 a2 Heqv st st'.
+  split; intros Hceval.
+  Case "->".
+    inversion Hceval. subst. apply E_Ass.
+    rewrite Heqv. reflexivity.
+  Case "<-".
+    inversion Hceval. subst. apply E_Ass.
+    rewrite Heqv. reflexivity. Qed.
+
+Theorem CWhile_congruence : forall b1 b1' c1 c1',
+  bequiv b1 b1' -> cequiv c1 c1' ->
+  cequiv (WHILE b1 DO c1 END) (WHILE b1' DO c1' END).
+Proof.
+  unfold bequiv,cequiv.
+  intros b1 b1' c1 c1' Hb1e Hc1e st st'.
+  split; intros Hce.
+  Case "->".
+    remember (WHILE b1 DO c1 END) as cwhile.
+    induction Hce; inversion Heqcwhile; subst.
+    SCase "E_WhileEnd".
+      apply E_WhileEnd. rewrite <- Hb1e. apply H.
+    SCase "E_WhileLoop".
+      apply E_WhileLoop with (st' := st').
+      SSCase "show loop runs". rewrite <- Hb1e. apply H.
+      SSCase "body execution".
+        apply (Hc1e st st'). apply Hce1.
+      SSCase "subsequent loop execution".
+        apply IHHce2. reflexivity.
+  Case "<-".
+    remember (WHILE b1' DO c1' END) as c'while.
+    induction Hce; inversion Heqc'while; subst.
+    SCase "E_WhileEnd".
+      apply E_WhileEnd. rewrite -> Hb1e. apply H.
+    SCase "E_WhileLoop".
+      apply E_WhileLoop with (st' := st').
+      SSCase "show loop runs". rewrite -> Hb1e. apply H.
+      SSCase "body execution".
+        apply (Hc1e st st'). apply Hce1.
+      SSCase "subsequent loop execution".
+        apply IHHce2. reflexivity. Qed.
+
+(* **** Exercise: 3 stars, optional (CSeq_congruence) *)
+(** **** 練習問題: ★★★, optional (CSeq_congruence) *)
+Theorem CSeq_congruence_0 :
+  forall c1 c1' c2 c2',
+    cequiv c1 c1' -> cequiv c2 c2' ->
+    cequiv (c1;c2) (c1';c2').
+Proof.
+  intros c1 c1' c2 c2' Hc1e Hc2e st st'.
+
+  split; intro Hc.
+  Case "->".
+    inversion Hc; subst.
+    Check (Hc1e st st'0).
+    apply E_Seq with (st' := st'0).
+    rewrite <- (Hc1e st st'0). assumption.
+    rewrite <- (Hc2e st'0 st'). assumption.
+  Case "<-".
+    inversion Hc; subst.
+    apply E_Seq with (st' := st'0).
+    rewrite -> (Hc1e st st'0). assumption.
+    rewrite -> (Hc2e st'0 st'). assumption.
+Qed.
+
+Theorem CSeq_congruence :
+  forall c1 c1' c2 c2',
+    cequiv c1 c1' -> cequiv c2 c2' ->
+    cequiv (c1;c2) (c1';c2').
+Proof.
+  intros c1 c1' c2 c2' Hc1e Hc2e st st'.
+
+  split; intro Hc
+  ; inversion Hc; subst
+  ; apply E_Seq with (st' := st'0)
+  ; [ rewrite <- (Hc1e st st'0) | rewrite <- (Hc2e st'0 st') |
+      rewrite -> (Hc1e st st'0) | rewrite -> (Hc2e st'0 st') ] ; assumption.
+Qed.
+(** [] *)
+
+(* **** Exercise: 3 stars (CIf_congruence) *)
+(** **** 練習問題: ★★★ (CIf_congruence) *)
+Theorem CIf_congruence_0 :
+  forall b b' c1 c1' c2 c2',
+    bequiv b b' -> cequiv c1 c1' -> cequiv c2 c2' ->
+    cequiv (IFB b THEN c1 ELSE c2 FI) (IFB b' THEN c1' ELSE c2' FI).
+Proof.
+  intros b b' c1 c1' c2 c2' Hbe Hc1e Hc2e st st'.
+  split; intro Hc.
+
+  Case "->".
+    inversion Hc; subst.
+
+    SCase "true".
+    apply E_IfTrue.
+    Check (Hbe st).
+    rewrite <- (Hbe st). assumption.
+    rewrite <- (Hc1e st). assumption.
+
+    SCase "false".
+    apply E_IfFalse.
+    rewrite <- (Hbe st). assumption.
+    rewrite <- (Hc2e st). assumption.
+
+  Case "<-".
+    inversion Hc; subst.
+
+    SCase "true".
+    apply E_IfTrue.
+    Check (Hbe st).
+    rewrite -> (Hbe st). assumption.
+    rewrite -> (Hc1e st). assumption.
+
+    SCase "false".
+    apply E_IfFalse.
+    rewrite -> (Hbe st). assumption.
+    rewrite -> (Hc2e st). assumption.
+Qed.
+
+Theorem CIf_congruence :
+  forall b b' c1 c1' c2 c2',
+    bequiv b b' -> cequiv c1 c1' -> cequiv c2 c2' ->
+    cequiv (IFB b THEN c1 ELSE c2 FI) (IFB b' THEN c1' ELSE c2' FI).
+Proof.
+  intros b b' c1 c1' c2 c2' Hbe Hc1e Hc2e st st'.
+
+  split; intro Hc
+  ; inversion Hc; subst
+  ; [ apply E_IfTrue | apply E_IfFalse |
+      apply E_IfTrue | apply E_IfFalse ]
+  ; [ rewrite <- (Hbe st) | rewrite <- (Hc1e st) |
+      rewrite <- (Hbe st) | rewrite <- (Hc2e st) |
+      rewrite -> (Hbe st) | rewrite -> (Hc1e st) |
+      rewrite -> (Hbe st) | rewrite -> (Hc2e st) ]
+  ; assumption.
+Qed.
+(** [] *)
+
+
+(* ケーススタディ: 定数畳み込み *)
+
+(* プログラム変換の健全性 *)
+
+Definition atrans_sound (atrans : aexp -> aexp) : Prop :=
+  forall (a : aexp),
+    aequiv a (atrans a).
+
+Definition btrans_sound (btrans : bexp -> bexp) : Prop :=
+  forall (b : bexp),
+    bequiv b (btrans b).
+
+Definition ctrans_sound (ctrans : com -> com) : Prop :=
+  forall (c : com),
+    cequiv c (ctrans c).
+
+(* 定数畳み込み変換 *)
+
+Fixpoint fold_constants_aexp (a : aexp) : aexp :=
+  match a with
+    | ANum n => ANum n
+    | AId i => AId i
+    | APlus a1 a2 =>
+      match (fold_constants_aexp a1, fold_constants_aexp a2) with
+        | (ANum n1, ANum n2) => ANum (n1 + n2)
+        | (a1', a2') => APlus a1' a2'
+      end
+    | AMinus a1 a2 =>
+      match (fold_constants_aexp a1, fold_constants_aexp a2) with
+        | (ANum n1, ANum n2) => ANum (n1 - n2)
+        | (a1', a2') => AMinus a1' a2'
+      end
+    | AMult a1 a2 =>
+      match (fold_constants_aexp a1, fold_constants_aexp a2) with
+        | (ANum n1, ANum n2) => ANum (n1 * n2)
+        | (a1', a2') => AMult a1' a2'
+      end
+  end.
+
+Example fold_aexp_ex1 :
+  fold_constants_aexp
+    (AMult (APlus (ANum 1) (ANum 2)) (AId X))
+  = AMult (ANum 3) (AId X).
+Proof. reflexivity. Qed.
+
+Example fold_aexp_ex2 :
+  fold_constants_aexp
+    (AMinus (AId X) (APlus (AMult (ANum 0) (ANum 6)) (AId Y)))
+  = AMinus (AId X) (APlus (ANum 0) (AId Y)).
+Proof. reflexivity. Qed.
+
+Fixpoint fold_constants_bexp (b : bexp) : bexp :=
+  match b with
+    | BTrue => BTrue
+    | BFalse => BFalse
+    | BEq a1 a2 =>
+      match (fold_constants_aexp a1, fold_constants_aexp a2) with
+        | (ANum n1, ANum n2) => if beq_nat n1 n2 then BTrue else
+                                  BFalse
+        | (a1', a2') => BEq a1' a2'
+      end
+    | BLe a1 a2 =>
+      match (fold_constants_aexp a1, fold_constants_aexp a2) with
+        | (ANum n1, ANum n2) => if ble_nat n1 n2 then BTrue else
+                                  BFalse
+        | (a1', a2') => BLe a1' a2'
+      end
+    | BNot b1 =>
+      match (fold_constants_bexp b1) with
+        | BTrue => BFalse
+        | BFalse => BTrue
+        | b1' => BNot b1'
+      end
+    | BAnd b1 b2 =>
+      match (fold_constants_bexp b1, fold_constants_bexp b2) with
+        | (BTrue, BTrue) => BTrue
+        | (BTrue, BFalse) => BFalse
+        | (BFalse, BTrue) => BFalse
+        | (BFalse, BFalse) => BFalse
+        | (b1', b2') => BAnd b1' b2'
+      end
+  end.
+
+Example fold_bexp_ex1 :
+    fold_constants_bexp (BAnd BTrue (BNot (BAnd BFalse BTrue)))
+  = BTrue.
+Proof. reflexivity. Qed.
+
+Example fold_bexp_ex2 :
+    fold_constants_bexp
+      (BAnd (BEq (AId X) (AId Y))
+            (BEq (ANum 0)
+                 (AMinus (ANum 2) (APlus (ANum 1) (ANum 1)))))
+  = BAnd (BEq (AId X) (AId Y)) BTrue.
+Proof. reflexivity. Qed.
