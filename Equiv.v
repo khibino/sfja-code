@@ -1125,3 +1125,203 @@ Proof.
 
 (* FILL IN HERE *)
 (** [] *)
+
+(** **** 練習問題: ★★★, recommended (inequiv_exercise) *)
+Theorem inequiv_exercise:
+  ~ cequiv (WHILE BTrue DO SKIP END) SKIP.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(** * 外延性を使わずに行う (Optional) *)
+
+Definition stequiv (st1 st2 : state) : Prop :=
+  forall (X:id), st1 X = st2 X.
+
+Notation "st1 '~' st2" := (stequiv st1 st2) (at level 30).
+
+(** [stequiv]が同値関係(_equivalence_、 つまり、反射的、対称的、推移的関係)
+    であることを証明することは容易です。この同値関係により、
+    すべての状態の集合は同値類に分割されます。*)
+
+(** **** 練習問題: ★, optional (stequiv_refl) *)
+Lemma stequiv_refl : forall (st : state),
+  st ~ st.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(** **** 練習問題: ★, optional (stequiv_sym) *)
+Lemma stequiv_sym : forall (st1 st2 : state),
+  st1 ~ st2 ->
+  st2 ~ st1.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(** **** 練習問題: ★, optional (stequiv_trans) *)
+Lemma stequiv_trans : forall (st1 st2 st3 : state),
+  st1 ~ st2 ->
+  st2 ~ st3 ->
+  st1 ~ st3.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(* **** Exercise: 1 star, optional (stequiv_update) *)
+(** **** 練習問題: ★, optional (stequiv_update) *)
+Lemma stequiv_update : forall (st1 st2 : state),
+  st1 ~ st2 ->
+  forall (X:id) (n:nat),
+  update st1 X n ~ update st2 X n.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(* It is then straightforward to show that [aeval] and [beval] behave
+    uniformly on all members of an equivalence class: *)
+(** [aeval]と[beval]が同値類のすべての要素に対して同じように振る舞うことは、
+    ここからストレートに証明できます: *)
+
+(* **** Exercise: 2 stars, optional (stequiv_aeval) *)
+(** **** 練習問題: ★★, optional (stequiv_aeval) *)
+Lemma stequiv_aeval : forall (st1 st2 : state),
+  st1 ~ st2 ->
+  forall (a:aexp), aeval st1 a = aeval st2 a.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(* **** Exercise: 2 stars, optional (stequiv_beval) *)
+(** **** 練習問題: ★★, optional (stequiv_beval) *)
+Lemma stequiv_beval : forall (st1 st2 : state),
+  st1 ~ st2 ->
+  forall (b:bexp), beval st1 b = beval st2 b.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+Lemma stequiv_ceval: forall (st1 st2 : state),
+  st1 ~ st2 ->
+  forall (c: com) (st1': state),
+    (c / st1 || st1') ->
+    exists st2' : state,
+    ((c / st2 || st2') /\  st1' ~ st2').
+Proof.
+  intros st1 st2 STEQV c st1' CEV1. generalize dependent st2.
+  induction CEV1; intros st2 STEQV.
+  Case "SKIP".
+    exists st2. split.
+      constructor.
+      assumption.
+  Case ":=".
+    exists (update st2 l n). split.
+       constructor.  rewrite <- H. symmetry.  apply stequiv_aeval.
+       assumption. apply stequiv_update.  assumption.
+  Case ";".
+    destruct (IHCEV1_1 st2 STEQV) as [st2' [P1 EQV1]].
+    destruct (IHCEV1_2 st2' EQV1) as [st2'' [P2 EQV2]].
+    exists st2''.  split.
+      apply E_Seq with st2';  assumption.
+      assumption.
+  Case "IfTrue".
+    destruct (IHCEV1 st2 STEQV) as [st2' [P EQV]].
+    exists st2'.  split.
+      apply E_IfTrue.  rewrite <- H. symmetry. apply stequiv_beval.
+      assumption. assumption. assumption.
+  Case "IfFalse".
+    destruct (IHCEV1 st2 STEQV) as [st2' [P EQV]].
+    exists st2'. split.
+     apply E_IfFalse. rewrite <- H. symmetry. apply stequiv_beval.
+     assumption.  assumption. assumption.
+  Case "WhileEnd".
+    exists st2. split.
+      apply E_WhileEnd. rewrite <- H. symmetry. apply stequiv_beval.
+      assumption. assumption.
+  Case "WhileLoop".
+    destruct (IHCEV1_1 st2 STEQV) as [st2' [P1 EQV1]].
+    destruct (IHCEV1_2 st2' EQV1) as [st2'' [P2 EQV2]].
+    exists st2''. split.
+      apply E_WhileLoop with st2'.  rewrite <- H. symmetry.
+      apply stequiv_beval. assumption. assumption. assumption.
+      assumption.
+Qed.
+
+Reserved Notation "c1 '/' st '||'' st'" (at level 40, st at level 39).
+
+Inductive ceval' : com -> state -> state -> Prop :=
+  | E_equiv : forall c st st' st'',
+    c / st || st' ->
+    st' ~ st'' ->
+    c / st ||' st''
+  where   "c1 '/' st '||'' st'" := (ceval' c1 st st').
+
+Definition cequiv' (c1 c2 : com) : Prop :=
+  forall (st st' : state),
+    (c1 / st ||' st') <-> (c2 / st ||' st').
+
+Lemma cequiv__cequiv' : forall (c1 c2: com),
+  cequiv c1 c2 -> cequiv' c1 c2.
+Proof.
+  unfold cequiv, cequiv'; split; intros.
+    inversion H0 ; subst.  apply E_equiv with st'0.
+    apply (H st st'0); assumption. assumption.
+    inversion H0 ; subst.  apply E_equiv with st'0.
+    apply (H st st'0). assumption. assumption.
+Qed.
+
+(** **** 練習問題: ★★, optional (identity_assignment') *)
+(** 最後にもとの例を再度扱います... (証明を完成しなさい。) *)
+
+Example identity_assignment' :
+  cequiv' SKIP (X ::= AId X).
+Proof.
+    unfold cequiv'.  intros.  split; intros.
+    Case "->".
+      inversion H; subst; clear H. inversion H0; subst.
+      apply E_equiv with (update st'0 X (st'0 X)).
+      constructor. reflexivity.  apply stequiv_trans with st'0.
+      unfold stequiv. intros. apply update_same.
+      reflexivity. assumption.
+    Case "<-".
+      (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(** * さらなる練習問題 *)
+
+(** **** 練習問題: ★★★★, optional (for_while_equiv) *)
+(** この練習問題は、Imp_J.vのoptionalの練習問題 add_for_loop を拡張したものです。
+    もとの add_for_loop は、コマンド言語に C-言語のスタイルの [for]ループを
+    拡張しなさい、というものでした。
+    ここでは次のことを証明しなさい:
+[[
+      for (c1 ; b ; c2) {
+          c3
+      }
+]]
+    は
+[[
+       c1 ;
+       WHILE b DO
+         c3 ;
+         c2
+       END
+]]
+    と同値である。
+*)
+(* FILL IN HERE *)
+(** [] *)
+
+(** **** 練習問題: ★★★, optional (swap_noninterfering_assignments) *)
+Theorem swap_noninterfering_assignments: forall l1 l2 a1 a2,
+  l1 <> l2 ->
+  var_not_used_in_aexp l1 a2 ->
+  var_not_used_in_aexp l2 a1 ->
+  cequiv
+    (l1 ::= a1; l2 ::= a2)
+    (l2 ::= a2; l1 ::= a1).
+Proof.
+(* Hint: You'll need [functional_extensionality] *)
+(* ヒント: [functional_extensionality]を必要とするでしょう。 *)
+(* FILL IN HERE *) Admitted.
+(** [] *)
