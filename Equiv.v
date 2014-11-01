@@ -975,3 +975,153 @@ Proof.
       apply WHILE_false. assumption.
 Qed.
 (** [] *)
+
+(** *** (0 + n)の消去の健全性、再び *)
+
+(** **** 練習問題: ★★★★, optional (optimize_0plus) *)
+(** Imp_J.vの[optimize_0plus]の定義をふり返ります。
+[[
+    Fixpoint optimize_0plus (e:aexp) : aexp :=
+      match e with
+      | ANum n =>
+          ANum n
+      | APlus (ANum 0) e2 =>
+          optimize_0plus e2
+      | APlus e1 e2 =>
+          APlus (optimize_0plus e1) (optimize_0plus e2)
+      | AMinus e1 e2 =>
+          AMinus (optimize_0plus e1) (optimize_0plus e2)
+      | AMult e1 e2 =>
+          AMult (optimize_0plus e1) (optimize_0plus e2)
+      end.
+]]
+   この関数は、[aexp]の上で定義されていて、状態を扱わないことに注意します。
+
+   変数を扱えるようにした、この関数の新しいバージョンを記述しなさい。
+   また、[bexp]およびコマンドに対しても、同様のものを記述しなさい:
+[[
+     optimize_0plus_aexp
+     optimize_0plus_bexp
+     optimize_0plus_com
+]]
+   これらの関数の健全性を、[fold_constants_*]について行ったのと同様に証明しなさい。
+   [optimize_0plus_com]の証明においては、合同性補題を確実に使いなさい
+   (そうしなければ証明はとても長くなるでしょう!)。
+
+   次に、コマンドに対して次の処理を行う最適化関数を定義しなさい。行うべき処理は、
+   まず定数畳み込みを([fold_constants_com]を使って)行い、
+   次に[0 + n]項を([optimize_0plus_com]を使って)消去することです。
+
+   - この最適化関数の出力の意味のある例を示しなさい。
+
+   - この最適化関数が健全であることを示しなさい。(この部分は「とても」簡単なはずです。) *)
+
+Fixpoint optimize_0plus_aexp (e:aexp) : aexp :=
+  match e with
+    | ANum n =>
+      ANum n
+    | AId X => AId X
+    | APlus (ANum 0) e2 =>
+      optimize_0plus_aexp e2
+    | APlus e1 e2 =>
+      APlus (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+    | AMinus e1 e2 =>
+      AMinus (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+    | AMult e1 e2 =>
+      AMult (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+  end.
+
+Fixpoint optimize_0plus_bexp (e:bexp) : bexp :=
+  match e with
+    | BEq a1 a2 => BEq (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+    | BLe a1 a2 => BLe (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+    | b => b
+  end.
+
+(* FILL IN HERE *)
+(** [] *)
+
+
+(* プログラムが同値でないことを証明する *)
+
+Fixpoint subst_aexp (i : id) (u : aexp) (a : aexp) : aexp :=
+  match a with
+  | ANum n => ANum n
+  | AId i' => if beq_id i i' then u else AId i'
+  | APlus a1 a2 => APlus (subst_aexp i u a1) (subst_aexp i u a2)
+  | AMinus a1 a2 => AMinus (subst_aexp i u a1) (subst_aexp i u a2)
+  | AMult a1 a2 => AMult (subst_aexp i u a1) (subst_aexp i u a2)
+  end.
+
+Example subst_aexp_ex :
+  subst_aexp X (APlus (ANum 42) (ANum 53)) (APlus (AId Y) (AId X)) =
+  (APlus (AId Y) (APlus (ANum 42) (ANum 53))).
+Proof. reflexivity. Qed.
+
+Definition subst_equiv_property := forall i1 i2 a1 a2,
+  cequiv (i1 ::= a1; i2 ::= a2)
+         (i1 ::= a1; i2 ::= subst_aexp i1 a1 a2).
+
+Theorem subst_inequiv :
+  ~ subst_equiv_property.
+Proof.
+  unfold subst_equiv_property.
+  intros Contra.
+
+  remember (X ::= APlus (AId X) (ANum 1);
+            Y ::= AId X)
+      as c1.
+  remember (X ::= APlus (AId X) (ANum 1);
+            Y ::= APlus (AId X) (ANum 1))
+      as c2.
+  assert (cequiv c1 c2) by (subst; apply Contra).
+
+  remember (update (update empty_state X 1) Y 1) as st1.
+  remember (update (update empty_state X 1) Y 2) as st2.
+  assert (H1: c1 / empty_state || st1);
+  assert (H2: c2 / empty_state || st2);
+  try (subst;
+       apply E_Seq with (st' := (update empty_state X 1));
+       apply E_Ass; reflexivity).
+  apply H in H1.
+
+  (* Finally, we use the fact that evaluation is deterministic
+     to obtain a contradiction. *)
+  assert (Hcontra: st1 = st2)
+    by (apply (ceval_deterministic c2 empty_state); assumption).
+  assert (Hcontra': st1 Y = st2 Y)
+    by (rewrite Hcontra; reflexivity).
+  subst. inversion Hcontra'.  Qed.
+
+(** **** 練習問題: ★★★★ (better_subst_equiv) *)
+(** 上で成立すると考えていた同値は、完全に意味がないものではありません。
+    それは実際、ほとんど正しいのです。それを直すためには、
+    最初の代入の右辺に変数[X]が現れる場合を排除すれば良いのです。*)
+
+Inductive var_not_used_in_aexp (X:id) : aexp -> Prop :=
+  | VNUNum: forall n, var_not_used_in_aexp X (ANum n)
+  | VNUId: forall Y, X <> Y -> var_not_used_in_aexp X (AId Y)
+  | VNUPlus: forall a1 a2,
+      var_not_used_in_aexp X a1 ->
+      var_not_used_in_aexp X a2 ->
+      var_not_used_in_aexp X (APlus a1 a2)
+  | VNUMinus: forall a1 a2,
+      var_not_used_in_aexp X a1 ->
+      var_not_used_in_aexp X a2 ->
+      var_not_used_in_aexp X (AMinus a1 a2)
+  | VNUMult: forall a1 a2,
+      var_not_used_in_aexp X a1 ->
+      var_not_used_in_aexp X a2 ->
+      var_not_used_in_aexp X (AMult a1 a2).
+
+Lemma aeval_weakening : forall i st a ni,
+  var_not_used_in_aexp i a ->
+  aeval (update st i ni) a = aeval st a.
+Proof.
+  (* FILL IN HERE *) Admitted.
+
+(** [var_not_used_in_aexp]を使って、[subst_equiv_property]の正しいバージョンを形式化し、
+    証明しなさい。*)
+
+(* FILL IN HERE *)
+(** [] *)
