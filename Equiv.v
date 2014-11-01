@@ -924,8 +924,20 @@ Proof.
 ).
     destruct a1'; destruct a2'; try reflexivity.
       simpl. destruct (beq_nat n n0); reflexivity.
+
   Case "BLe".
-admit.
+    simpl.
+    remember (fold_constants_aexp a) as a'.
+    remember (fold_constants_aexp a0) as a0'.
+    replace (aeval st a) with (aeval st a').
+    replace (aeval st a0) with (aeval st a0').
+    destruct a'; destruct a0'
+    ; try reflexivity.
+    simpl. destruct (ble_nat n n0); reflexivity.
+
+    subst a0'. rewrite <- fold_constants_aexp_sound. reflexivity.
+    subst a'. rewrite <- fold_constants_aexp_sound. reflexivity.
+
   Case "BNot".
     simpl. remember (fold_constants_bexp b) as b'.
     rewrite IHb.
