@@ -748,3 +748,192 @@ Example fold_bexp_ex2 :
                  (AMinus (ANum 2) (APlus (ANum 1) (ANum 1)))))
   = BAnd (BEq (AId X) (AId Y)) BTrue.
 Proof. reflexivity. Qed.
+
+Fixpoint fold_constants_com (c : com) : com :=
+  match c with
+  | SKIP      =>
+      SKIP
+  | i ::= a  =>
+      CAss i (fold_constants_aexp a)
+  | c1 ; c2  =>
+      (fold_constants_com c1) ; (fold_constants_com c2)
+  | IFB b THEN c1 ELSE c2 FI =>
+      match fold_constants_bexp b with
+      | BTrue => fold_constants_com c1
+      | BFalse => fold_constants_com c2
+      | b' => IFB b' THEN fold_constants_com c1
+                     ELSE fold_constants_com c2 FI
+      end
+  | WHILE b DO c END =>
+      match fold_constants_bexp b with
+      | BTrue => WHILE BTrue DO SKIP END
+      | BFalse => SKIP
+      | b' => WHILE b' DO (fold_constants_com c) END
+      end
+  end.
+
+Example fold_com_ex1 :
+  fold_constants_com
+    (X ::= APlus (ANum 4) (ANum 5);
+     Y ::= AMinus (AId X) (ANum 3);
+     IFB BEq (AMinus (AId X) (AId Y)) (APlus (ANum 2) (ANum 4)) THEN
+       SKIP
+     ELSE
+       Y ::= ANum 0
+     FI;
+     IFB BLe (ANum 0) (AMinus (ANum 4) (APlus (ANum 2) (ANum 1))) THEN
+       Y ::= ANum 0
+     ELSE
+       SKIP
+     FI;
+     WHILE BEq (AId Y) (ANum 0) DO
+       X ::= APlus (AId X) (ANum 1)
+     END) =
+  (X ::= ANum 9;
+   Y ::= AMinus (AId X) (ANum 3);
+   IFB BEq (AMinus (AId X) (AId Y)) (ANum 6) THEN
+     SKIP
+   ELSE
+     (Y ::= ANum 0)
+   FI;
+   Y ::= ANum 0;
+   WHILE BEq (AId Y) (ANum 0) DO
+     X ::= APlus (AId X) (ANum 1)
+   END).
+Proof. reflexivity. Qed.
+
+(** ** 定数畳み込みの健全性 *)
+
+Theorem fold_constants_aexp_sound :
+  atrans_sound fold_constants_aexp.
+Proof.
+  unfold atrans_sound. intros a. unfold aequiv. intros st.
+  aexp_cases (induction a) Case; simpl;
+    (* ANum and AId follow immediately *)
+    try reflexivity;
+    (* APlus, AMinus, and AMult follow from the IH
+       and the observation that
+              aeval st (APlus a1 a2)
+            = ANum ((aeval st a1) + (aeval st a2))
+            = aeval st (ANum ((aeval st a1) + (aeval st a2)))
+       (and similarly for AMinus/minus and AMult/mult) *)
+    try (destruct (fold_constants_aexp a1);
+         destruct (fold_constants_aexp a2);
+         rewrite IHa1; rewrite IHa2; reflexivity). Qed.
+
+(* 練習問題: ★★★, optional (fold_bexp_BEq_informal) *)
+
+(*
+ここに、ブール式の定数畳み込みに関する健全性の議論のBEqの場合の非形
+式的証明を示します。これを丁寧に読みその後の形式的証明と比較しなさい
+。次に、形式的証明のBLe部分を(もし可能ならばBEqの場合を見ないで)記述
+しなさい。
+
+「定理」:ブール式に対する定数畳み込み関数fold_constants_bexpは健全で
+ある。
+
+「証明」:すべてのブール式bについてbがfold_constants_bexp と同値であ
+ることを示す。 bについての帰納法を行う。 bがBEq a1 a2という形の場合
+を示す。
+
+この場合、
+       beval st (BEq a1 a2)
+     = beval st (fold_constants_bexp (BEq a1 a2)).
+
+を示せば良い。これには2種類の場合がある:
+
+  * 最初に、あるn1とn2について、fold_constants_aexp a1 = ANum n1かつ
+    fold_constants_aexp a2 = ANum n2と仮定する。
+
+    この場合、
+               fold_constants_bexp (BEq a1 a2)
+             = if beq_nat n1 n2 then BTrue else BFalse
+
+    かつ
+               beval st (BEq a1 a2)
+             = beq_nat (aeval st a1) (aeval st a2).
+
+    となる。算術式についての定数畳み込みの健全性(補題
+    fold_constants_aexp_sound)より、
+               aeval st a1
+             = aeval st (fold_constants_aexp a1)
+             = aeval st (ANum n1)
+             = n1
+
+    かつ
+               aeval st a2
+             = aeval st (fold_constants_aexp a2)
+             = aeval st (ANum n2)
+             = n2,
+
+    である。従って、
+               beval st (BEq a1 a2)
+             = beq_nat (aeval a1) (aeval a2)
+             = beq_nat n1 n2.
+
+    となる。また、(n1 = n2とn1 <> n2の場合をそれぞれ考えると)
+               beval st (if beq_nat n1 n2 then BTrue else BFalse)
+             = if beq_nat n1 n2 then beval st BTrue else beval st
+    BFalse
+             = if beq_nat n1 n2 then true else false
+             = beq_nat n1 n2.
+
+    となることは明らかである。ゆえに
+               beval st (BEq a1 a2)
+             = beq_nat n1 n2.
+             = beval st (if beq_nat n1 n2 then BTrue else BFalse),
+
+    となる。これは求められる性質である。
+
+  * それ以外の場合、fold_constants_aexp a1とfold_constants_aexp a2
+    のどちらかは定数ではない。この場合、
+               beval st (BEq a1 a2)
+             = beval st (BEq (fold_constants_aexp a1)
+                             (fold_constants_aexp a2)),
+
+    を示せば良い。 bevalの定義から、これは
+               beq_nat (aeval st a1) (aeval st a2)
+             = beq_nat (aeval st (fold_constants_aexp a1))
+                       (aeval st (fold_constants_aexp a2)).
+
+    を示すことと同じである。算術式についての定数畳み込みの健全性(
+    fold_constants_aexp_sound)より、
+             aeval st a1 = aeval st (fold_constants_aexp a1)
+             aeval st a2 = aeval st (fold_constants_aexp a2),
+
+    となり、この場合も成立する。
+ *)
+(* ☐ *)
+
+Theorem fold_constants_bexp_sound:
+  btrans_sound fold_constants_bexp.
+Proof.
+  unfold btrans_sound. intros b. unfold bequiv. intros st.
+  bexp_cases (induction b) Case;
+
+    try reflexivity.
+  Case "BEq".
+    rename a into a1. rename a0 into a2. simpl.
+    remember (fold_constants_aexp a1) as a1'.
+    remember (fold_constants_aexp a2) as a2'.
+    replace (aeval st a1) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity
+).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity
+).
+    destruct a1'; destruct a2'; try reflexivity.
+      simpl. destruct (beq_nat n n0); reflexivity.
+  Case "BLe".
+admit.
+  Case "BNot".
+    simpl. remember (fold_constants_bexp b) as b'.
+    rewrite IHb.
+    destruct b'; reflexivity.
+  Case "BAnd".
+    simpl.
+    remember (fold_constants_bexp b1) as b1'.
+    remember (fold_constants_bexp b2) as b2'.
+    rewrite IHb1. rewrite IHb2.
+    destruct b1'; destruct b2'; reflexivity. Qed.
+(* ☐ *)
