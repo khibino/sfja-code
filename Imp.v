@@ -362,6 +362,42 @@ Qed.
 証明しなさい。
  *)
 
+(* SearchAbout bool. *)
+
+Reserved Notation "e '||?' n" (at level 49).
+
+Inductive bevalR : bexp -> bool -> Prop :=
+  | E_BTrue  : BTrue  ||? true
+  | E_BFalse : BFalse ||? false
+  | E_BEq : forall (e1 e2 : aexp) (n1 n2 : nat),
+              (e1 || n1) -> (e2 || n2) -> BEq e1 e2 ||? beq_nat n1 n2
+  | E_BLe : forall (e1 e2 : aexp) (n1 n2 : nat),
+              (e1 || n1) -> (e2 || n2) -> BLe e1 e2 ||? ble_nat n1 n2
+  | E_BNot : forall (be : bexp) (b : bool),
+               (be ||? b) -> BNot be ||? negb b
+
+   where "e '||?' n" := (bevalR e n) : type_scope
+.
+
+(*
+  | BTrue : bexp
+  | BFalse : bexp
+  | BEq : aexp -> aexp -> bexp
+  | BLe : aexp -> aexp -> bexp
+  | BNot : bexp -> bexp
+  | BAnd : bexp -> bexp -> bexp.
+
+Theorem bevalR_iff_beval :
+  forall a n, bevalR a n <-> beval a = n.
+Proof.
+  intros.
+  split.
+  Case "->".
+  intros H.
+  bevalR_cases (induction H) SCase; simpl.
+ *)
+
+
 (* 推論規則記法 *)
 
 End AExp.
@@ -826,6 +862,7 @@ Definition test_ceval (st:state) (c:com) :=
   | Some st => Some (st X, st Y, st Z)
   end.
 
+Locate "LETOPT _ <== _ IN _".
 
 (* 練習問題: ★★, recommended (pup_to_n) *)
 
