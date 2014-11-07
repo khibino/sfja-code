@@ -1050,6 +1050,33 @@ Fixpoint optimize_0plus_bexp (e:bexp) : bexp :=
     | b => b
   end.
 
+Fixpoint optimize_0plus_com (c:com) : com :=
+  match c with
+    | CSkip => CSkip
+    | CAss id ae => CAss id (optimize_0plus_aexp ae)
+    | CSeq c1 c2 => CSeq (optimize_0plus_com c1) (optimize_0plus_com c2)
+    | CIf b c1 c2 => CIf (optimize_0plus_bexp b)
+                         (optimize_0plus_com c1)
+                         (optimize_0plus_com c2)
+    | CWhile b c => CWhile (optimize_0plus_bexp b) (optimize_0plus_com c)
+  end.
+
+Print ex.
+
+Theorem optimize_0plus_aexp_sound :
+  atrans_sound optimize_0plus_aexp.
+Proof.
+  intros a st.
+  aexp_cases (induction a) Case; simpl
+  ; try reflexivity.
+  destruct (optimize_0plus_aexp a1) as [ [|] | | | | ]
+  ; destruct (optimize_0plus_aexp a2) as [ [|] | | | | ]
+  ; simpl
+  ; rewrite IHa1 ; rewrite IHa2
+
+  ; try (destruct (optimize_0plus_aexp a1); destruct (optimize_0plus_aexp a2)
+         ; rewrite IHa1; rewrite IHa2; reflexivity).
+
 (* FILL IN HERE *)
 (** [] *)
 
@@ -1130,7 +1157,20 @@ Lemma aeval_weakening : forall i st a ni,
   var_not_used_in_aexp i a ->
   aeval (update st i ni) a = aeval st a.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros i st a ni NU.
+  induction NU; subst
+  ; try (simpl;
+         rewrite -> IHNU1;
+         rewrite -> IHNU2;
+         reflexivity).
+  (* Num *)
+    reflexivity.
+  (* Id *)
+    simpl. unfold update.
+    SearchAbout beq_id.
+    apply not_eq_beq_id_false in H.
+    rewrite -> H. reflexivity.
+Qed.
 
 (** [var_not_used_in_aexp]を使って、[subst_equiv_property]の正しいバージョンを形式化し、
     証明しなさい。*)
