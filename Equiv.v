@@ -1174,7 +1174,46 @@ Qed.
 
 (** [var_not_used_in_aexp]を使って、[subst_equiv_property]の正しいバージョンを形式化し、
     証明しなさい。*)
+Definition better_subst_equiv_property :=
+  forall i1 i2 a1 a2,
+    var_not_used_in_aexp i1 a1 ->
+    cequiv (i1 ::= a1; i2 ::= a2)
+           (i1 ::= a1; i2 ::= subst_aexp i1 a1 a2).
 
+Theorem better_subst_equiv : better_subst_equiv_property.
+Proof.
+  intros i1 i2 a1 a2 NU.
+
+  split; intro H  (* <-> ==> <- & ->  ==> = & = *)
+  ; inversion H; subst  (* generate st'0 *)
+  ; (apply E_Seq with (st' := st'0)
+     ; [ assumption
+       | inversion H5; subst ])
+  ; (apply E_Ass; inversion H2; subst)
+  ; [ | symmetry ] (* from <- into -> *)
+
+  ; (induction a2; simpl
+
+     ; [ reflexivity (* num *)
+       | destruct (beq_id i1 i) as [] eqn: EQ
+         ; [ unfold update; rewrite EQ
+             ; inversion NU; subst
+             ; apply aeval_weakening; assumption
+           | reflexivity]
+         (* id *)
+
+       | (* plus *) | (* minus *) | (* mult *) ]
+
+     ; (rewrite IHa2_1
+        ; [ rewrite IHa2_2
+            ; [ reflexivity
+              | apply E_Seq with (st' := update st i1 (aeval st a1))
+              | ]
+            ; apply E_Ass; reflexivity
+          | apply E_Seq with (st' := update st i1 (aeval st a1))
+          | ]
+        ; apply E_Ass; reflexivity) ).
+Qed.
 (* FILL IN HERE *)
 (** [] *)
 
