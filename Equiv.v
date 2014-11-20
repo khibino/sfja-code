@@ -1221,7 +1221,13 @@ Qed.
 Theorem inequiv_exercise:
   ~ cequiv (WHILE BTrue DO SKIP END) SKIP.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro eqv.
+  remember (eqv empty_state empty_state) as eqH.
+  destruct eqH as [ LH RH ].
+  apply (WHILE_true_nonterm BTrue SKIP empty_state empty_state).
+    intro st. reflexivity.
+    exact (RH (E_Skip empty_state)).
+Qed.
 (** [] *)
 
 (** * 外延性を使わずに行う (Optional) *)
