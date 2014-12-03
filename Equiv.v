@@ -1094,6 +1094,28 @@ Proof.
   ; reflexivity.
 Qed.
 
+Theorem optimize_0plus_com_sound :
+  ctrans_sound optimize_0plus_com.
+Proof.
+  intro c.
+
+  com_cases (induction c) Case; simpl.
+  Case "SKIP". apply refl_cequiv.
+  Case "::=". apply CAss_congruence. apply optimize_0plus_aexp_sound.
+  Case ";". apply CSeq_congruence; assumption.
+  Case "IFB".
+    assert (bequiv b (optimize_0plus_bexp b)).
+      SCase "Pf of assertion". apply optimize_0plus_bexp_sound.
+    remember (optimize_0plus_bexp b) as b'.
+    destruct b';
+      apply CIf_congruence; assumption.
+  Case "WHILE".
+    assert (bequiv b (optimize_0plus_bexp b)).
+      SCase "Pf of assertion". apply optimize_0plus_bexp_sound.
+    remember (optimize_0plus_bexp b) as b'.
+    destruct b';
+      apply CWhile_congruence; assumption.
+Qed.
 (* FILL IN HERE *)
 (** [] *)
 
