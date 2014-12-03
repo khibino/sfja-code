@@ -1302,7 +1302,9 @@ Lemma stequiv_trans : forall (st1 st2 st3 : state),
   st2 ~ st3 ->
   st1 ~ st3.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st1 st2 st3 H1 H2 i.
+  rewrite H1. rewrite H2. reflexivity.
+Qed.
 (** [] *)
 
 (* **** Exercise: 1 star, optional (stequiv_update) *)
