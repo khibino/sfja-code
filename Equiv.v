@@ -1332,7 +1332,16 @@ Lemma stequiv_aeval : forall (st1 st2 : state),
   forall (a:aexp), aeval st1 a = aeval st2 a.
 Proof.
   intros st1 st2 H a.
-  aexp_cases (induction a) Case; simpl
+  aexp_cases (induction a) Case; simpl.
+
+  reflexivity.
+
+  rewrite H. reflexivity.
+  rewrite IHa1. rewrite IHa2. reflexivity.
+  rewrite IHa1. rewrite IHa2. reflexivity.
+  rewrite IHa1. rewrite IHa2. reflexivity.
+
+  (*
   ; [
     | rewrite H
     | rewrite IHa1; rewrite IHa2
@@ -1340,6 +1349,7 @@ Proof.
     | rewrite IHa1; rewrite IHa2
     ]
   ; reflexivity.
+   *)
 Qed.
 (** [] *)
 
