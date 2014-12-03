@@ -1493,7 +1493,70 @@ Qed.
 ]]
     と同値である。
 *)
-(* FILL IN HERE *)
+
+Definition commandFor  c0 b c1 cbody : com :=
+  (CSeq c0 (CWhile b (CSeq cbody c1))).
+
+Notation "'FOR' c0 'TEST' b 'NEXT' c1 'DO' cbody 'END'" :=
+  (commandFor c0 b c1 cbody) (at level 80, right associativity).
+
+Reserved Notation "c1 '/' st '||' st'" (at level 40, st at level 39).
+
+Inductive ceval : com -> state -> state -> Prop :=
+  | E_Skip : forall st,
+      SKIP / st || st
+  | E_Ass : forall st a1 n l,
+      aeval st a1 = n ->
+      (l ::= a1) / st || (update st l n)
+  | E_Seq : forall c1 c2 st st' st'',
+      c1 / st || st' ->
+      c2 / st' || st'' ->
+      (c1 ; c2) / st || st''
+  | E_IfTrue : forall st st' b1 c1 c2,
+      beval st b1 = true ->
+      c1 / st || st' ->
+      (IFB b1 THEN c1 ELSE c2 FI) / st || st'
+  | E_IfFalse : forall st st' b1 c1 c2,
+      beval st b1 = false ->
+      c2 / st || st' ->
+      (IFB b1 THEN c1 ELSE c2 FI) / st || st'
+  | E_WhileEnd : forall b1 st c1,
+      beval st b1 = false ->
+      (WHILE b1 DO c1 END) / st || st
+  | E_WhileLoop : forall st st' st'' b1 c1,
+      beval st b1 = true ->
+      c1 / st || st' ->
+      (WHILE b1 DO c1 END) / st' || st'' ->
+      (WHILE b1 DO c1 END) / st || st''
+  | E_For :
+      forall st st' st'' c0 b1 c1 c2,
+        c0 / st || st' ->
+        (WHILE b1 DO (c2 ; c1) END) / st' || st'' ->
+        (FOR c0 TEST b1 NEXT c1 DO c2 END) / st || st''
+
+  where "c1 '/' st '||' st'" := (ceval c1 st st').
+
+Definition cequivF (c1 c2 : com) : Prop :=
+  forall (st st':state), (c1 / st || st') <-> (c2 / st || st').
+
+Theorem for_while_equiv :
+  forall c1 b c2 c3,
+    cequivF
+      (c1 ; WHILE b DO (c3 ; c2) END)
+      (FOR c1 TEST b NEXT c2 DO c3 END).
+Proof.
+  intros c1 b c2 c3 st0 st1.
+
+  split; intro H.
+
+  (* -> *)
+  inversion H; subst
+  ; apply E_For with (st' := st'); assumption.
+
+  (* <- *)
+  inversion H; subst
+  ; apply E_Seq with (st' := st'); assumption.
+Qed.
 (** [] *)
 
 (** **** 練習問題: ★★★, optional (swap_noninterfering_assignments) *)
