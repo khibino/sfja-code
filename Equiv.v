@@ -1292,7 +1292,7 @@ Lemma stequiv_sym : forall (st1 st2 : state),
   st2 ~ st1.
 Proof.
   intros st1 st2 H i.
-  symmetry. exact (H i).
+  rewrite H. reflexivity.
 Qed.
 (** [] *)
 
