@@ -1314,7 +1314,10 @@ Lemma stequiv_update : forall (st1 st2 : state),
   forall (X:id) (n:nat),
   update st1 X n ~ update st2 X n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st1 st2 H i1 n i2.
+  unfold update; destruct (beq_id i1 i2)
+  ; [  | rewrite H ]; reflexivity.
+Qed.
 (** [] *)
 
 (* It is then straightforward to show that [aeval] and [beval] behave
