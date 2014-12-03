@@ -1061,22 +1061,20 @@ Fixpoint optimize_0plus_com (c:com) : com :=
     | CWhile b c => CWhile (optimize_0plus_bexp b) (optimize_0plus_com c)
   end.
 
-Print ex.
-
 Theorem optimize_0plus_aexp_sound :
   atrans_sound optimize_0plus_aexp.
 Proof.
   intros a st.
-  aexp_cases (induction a) Case; simpl
-  ; try reflexivity.
-  destruct (optimize_0plus_aexp a1) as [ [|] | | | | ]
-  ; destruct (optimize_0plus_aexp a2) as [ [|] | | | | ]
-  ; simpl
-  ; rewrite IHa1 ; rewrite IHa2
+  aexp_cases (induction a as [ | | a1 | | ]) Case; simpl
 
-  ; try (destruct (optimize_0plus_aexp a1); destruct (optimize_0plus_aexp a2)
-         ; rewrite IHa1; rewrite IHa2; reflexivity).
-
+  ; [ reflexivity (* num *)
+    | reflexivity (* id *)
+    | destruct a1 as [ [ | ] | | | | ] eqn: a1H  (* plus *)
+    | (* minus *)
+    | (* mult *)
+    ]
+  ; rewrite IHa1; rewrite IHa2; reflexivity.
+Qed.
 (* FILL IN HERE *)
 (** [] *)
 
