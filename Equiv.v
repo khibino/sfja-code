@@ -1331,7 +1331,16 @@ Lemma stequiv_aeval : forall (st1 st2 : state),
   st1 ~ st2 ->
   forall (a:aexp), aeval st1 a = aeval st2 a.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st1 st2 H a.
+  aexp_cases (induction a) Case; simpl
+  ; [
+    | rewrite H
+    | rewrite IHa1; rewrite IHa2
+    | rewrite IHa1; rewrite IHa2
+    | rewrite IHa1; rewrite IHa2
+    ]
+  ; reflexivity.
+Qed.
 (** [] *)
 
 (* **** Exercise: 2 stars, optional (stequiv_beval) *)
@@ -1340,7 +1349,20 @@ Lemma stequiv_beval : forall (st1 st2 : state),
   st1 ~ st2 ->
   forall (b:bexp), beval st1 b = beval st2 b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st1 st2 H b.
+  remember (stequiv_aeval st1 st2 H) as stEQ.
+
+  bexp_cases (induction b) Case; simpl.
+  (* BTrue *)  reflexivity.
+  (* BFalse *) reflexivity.
+
+  (* BEq *) rewrite stEQ. rewrite stEQ. reflexivity.
+  (* BLe *) rewrite stEQ. rewrite stEQ. reflexivity.
+
+  (* BNot *) rewrite IHb. reflexivity.
+
+  (* BAnd *) rewrite IHb1. rewrite IHb2. reflexivity.
+Qed.
 (** [] *)
 
 Lemma stequiv_ceval: forall (st1 st2 : state),
