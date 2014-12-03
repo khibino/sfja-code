@@ -1469,7 +1469,6 @@ Proof.
       ; reflexivity.
       assumption.
 Qed.
-(* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** * さらなる練習問題 *)
