@@ -1505,7 +1505,53 @@ Theorem swap_noninterfering_assignments: forall l1 l2 a1 a2,
     (l1 ::= a1; l2 ::= a2)
     (l2 ::= a2; l1 ::= a1).
 Proof.
-(* Hint: You'll need [functional_extensionality] *)
-(* ヒント: [functional_extensionality]を必要とするでしょう。 *)
-(* FILL IN HERE *) Admitted.
+  (* Hint: You'll need [functional_extensionality] *)
+  (* ヒント: [functional_extensionality]を必要とするでしょう。 *)
+
+  intros l1 l2 a1 a2 NE NU12 NU21 st st'.
+
+  assert (forall k1 k2 x1 x2,
+            k1 <> k2 ->
+            update (update st k1 x1) k2 x2 =
+            update (update st k2 x2) k1 x1) as uswapH by
+        (intros k1 k2 x1 x2 NK
+         ; apply functional_extensionality
+         ; intro x
+         ; apply update_permute
+         ; apply not_eq_beq_id_false
+         ; assumption).
+
+
+  split.
+
+  (* -> *)
+  intro.
+
+  apply E_Seq with (update st l2 (aeval st a2)).
+  apply E_Ass. reflexivity.
+
+  inversion H; subst. inversion H2; subst. inversion H5; subst.
+  rewrite (aeval_weakening l1 st a2 (aeval st a1) NU12).
+  rewrite uswapH.
+
+  apply E_Ass.
+  rewrite (aeval_weakening l2 st a1 (aeval st a2) NU21).
+  reflexivity.
+  assumption.
+
+  (* <- *)
+  intro.
+
+  apply E_Seq with (update st l1 (aeval st a1)).
+  apply E_Ass. reflexivity.
+
+  inversion H; subst. inversion H2; subst. inversion H5; subst.
+  rewrite (aeval_weakening l2 st a1 (aeval st a2) NU21).
+  rewrite uswapH.
+
+  apply E_Ass.
+  rewrite (aeval_weakening l1 st a2 (aeval st a1) NU12).
+  reflexivity.
+  intro eq. apply NE. rewrite eq. reflexivity.
+Qed.
 (** [] *)
