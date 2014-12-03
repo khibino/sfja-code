@@ -1190,7 +1190,7 @@ Proof.
   ; (apply E_Ass; inversion H2; subst)
   ; [ | symmetry ] (* from <- into -> *)
 
-  ; (induction a2; simpl
+  ; (aexp_cases (induction a2 as [ | i | | | ] ) Case; simpl
 
      ; [ reflexivity (* num *)
        | destruct (beq_id i1 i) as [] eqn: EQ
