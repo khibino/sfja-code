@@ -1458,7 +1458,18 @@ Proof.
       unfold stequiv. intros. apply update_same.
       reflexivity. assumption.
     Case "<-".
-      (* FILL IN HERE *) Admitted.
+      inversion H; subst; clear H. inversion H0; subst.
+      apply E_equiv with st.
+      apply E_Skip.
+      apply stequiv_trans with (update st X (aeval st (AId X))).
+      intros i.  unfold update.
+
+      destruct (beq_id X i) eqn: idEq
+      ; [  rewrite (beq_id_eq X i (eq_sym idEq)) | ]
+      ; reflexivity.
+      assumption.
+Qed.
+(* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** * さらなる練習問題 *)
