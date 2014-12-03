@@ -1282,7 +1282,7 @@ Notation "st1 '~' st2" := (stequiv st1 st2) (at level 30).
 Lemma stequiv_refl : forall (st : state),
   st ~ st.
 Proof.
-  intros st i; reflexivity.
+  intros st i. reflexivity.
 Qed.
 (** [] *)
 
@@ -1291,7 +1291,9 @@ Lemma stequiv_sym : forall (st1 st2 : state),
   st1 ~ st2 ->
   st2 ~ st1.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st1 st2 H i.
+  symmetry. exact (H i).
+Qed.
 (** [] *)
 
 (** **** 練習問題: ★, optional (stequiv_trans) *)
