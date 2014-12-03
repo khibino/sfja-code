@@ -1116,7 +1116,6 @@ Proof.
     destruct b';
       apply CWhile_congruence; assumption.
 Qed.
-(* FILL IN HERE *)
 (** [] *)
 
 
@@ -1253,7 +1252,6 @@ Proof.
           | ]
         ; apply E_Ass; reflexivity) ).
 Qed.
-(* FILL IN HERE *)
 (** [] *)
 
 (** **** 練習問題: ★★★, recommended (inequiv_exercise) *)
@@ -1284,7 +1282,8 @@ Notation "st1 '~' st2" := (stequiv st1 st2) (at level 30).
 Lemma stequiv_refl : forall (st : state),
   st ~ st.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st i; reflexivity.
+Qed.
 (** [] *)
 
 (** **** 練習問題: ★, optional (stequiv_sym) *)
