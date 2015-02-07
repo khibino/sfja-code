@@ -1047,6 +1047,8 @@ Fixpoint optimize_0plus_bexp (e:bexp) : bexp :=
   match e with
     | BEq a1 a2 => BEq (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
     | BLe a1 a2 => BLe (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+    | BNot b1 => BNot (optimize_0plus_bexp b1)
+    | BAnd b1 b2 => BAnd (optimize_0plus_bexp b1) (optimize_0plus_bexp b2)
     | b => b
   end.
 
@@ -1069,7 +1071,7 @@ Proof.
 
   ; [ reflexivity (* num *)
     | reflexivity (* id *)
-    | destruct a1 as [ [ | ] | | | | ] eqn: a1H  (* plus *)
+    | destruct a1 as [ [ | ] | | | | ]  (* plus *)
     | (* minus *)
     | (* mult *)
     ]
@@ -1084,14 +1086,17 @@ Proof.
   bexp_cases (induction b) Case
   ; try reflexivity
 
-  ; rename a into a1; rename a0 into a2; simpl
+  ; try (rename a into a1; rename a0 into a2; simpl
   ; remember (optimize_0plus_aexp a1) as a1'
   ; remember (optimize_0plus_aexp a2) as a2'
   ; replace (aeval st a1) with (aeval st a1') by
       (subst a1'; rewrite <- optimize_0plus_aexp_sound; reflexivity)
   ; replace (aeval st a2) with (aeval st a2') by
       (subst a2'; rewrite <- optimize_0plus_aexp_sound; reflexivity)
-  ; reflexivity.
+  ; reflexivity).
+
+  simpl. rewrite <- IHb. reflexivity.
+  simpl. rewrite <- IHb1. rewrite <- IHb2. reflexivity.
 Qed.
 
 Theorem optimize_0plus_com_sound :
@@ -1104,17 +1109,40 @@ Proof.
   Case "::=". apply CAss_congruence. apply optimize_0plus_aexp_sound.
   Case ";". apply CSeq_congruence; assumption.
   Case "IFB".
-    assert (bequiv b (optimize_0plus_bexp b)).
-      SCase "Pf of assertion". apply optimize_0plus_bexp_sound.
-    remember (optimize_0plus_bexp b) as b'.
-    destruct b';
-      apply CIf_congruence; assumption.
+    apply CIf_congruence;
+    [ apply optimize_0plus_bexp_sound
+    | assumption | assumption
+    ].
   Case "WHILE".
-    assert (bequiv b (optimize_0plus_bexp b)).
-      SCase "Pf of assertion". apply optimize_0plus_bexp_sound.
-    remember (optimize_0plus_bexp b) as b'.
-    destruct b';
-      apply CWhile_congruence; assumption.
+    apply CWhile_congruence;
+    [ apply optimize_0plus_bexp_sound
+    | assumption
+    ].
+Qed.
+
+Definition optimize_composed_com (c:com) : com :=
+  optimize_0plus_com (fold_constants_com c).
+
+Print ctrans_sound.
+
+Theorem optimize_composed_com_sound :
+  ctrans_sound optimize_composed_com.
+Proof.
+  intros c st st'.
+  unfold optimize_composed_com.
+  split; intro.
+
+  assert (fold_constants_com c / st || st') as fcH.
+  rewrite <- (fold_constants_com_sound c st st').
+  assumption.
+  rewrite <- (optimize_0plus_com_sound (fold_constants_com c) st st').
+  assumption.
+
+  assert (fold_constants_com c / st || st') as fcH.
+  apply optimize_0plus_com_sound.
+  assumption.
+  apply fold_constants_com_sound.
+  assumption.
 Qed.
 (** [] *)
 
@@ -1497,6 +1525,7 @@ Qed.
 Definition commandFor  c0 b c1 cbody : com :=
   (CSeq c0 (CWhile b (CSeq cbody c1))).
 
+(*
 Notation "'FOR' c0 'TEST' b 'NEXT' c1 'DO' cbody 'END'" :=
   (commandFor c0 b c1 cbody) (at level 80, right associativity).
 
@@ -1557,6 +1586,7 @@ Proof.
   inversion H; subst
   ; apply E_Seq with (st' := st'); assumption.
 Qed.
+ *)
 (** [] *)
 
 (** **** 練習問題: ★★★, optional (swap_noninterfering_assignments) *)
