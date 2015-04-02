@@ -11,7 +11,8 @@ sources = \
 	Logic.v         \
 	SfLib.v         \
 	Imp.v           \
-	Equiv.v
+	Equiv.v         \
+	ImpList.v
 
 
 objs = $(sources:.v=.vo)
