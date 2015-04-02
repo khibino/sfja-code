@@ -902,11 +902,11 @@ Proof.
       (* S n = S (S m') *) inversion EQ as [ EQ1 ]. apply le_n.
 Qed.
 
-Inductive total_relation (a b:nat) (TotalOrd : nat -> nat -> Prop) : Prop :=
-  total_order : TotalOrd a b \/ TotalOrd b a -> total_relation a b TotalOrd.
+Inductive total_relation (R : nat -> nat -> Prop) (a b:nat) : Prop :=
+  total_order : R a b \/ R b a -> total_relation R a b.
 
 Example test_total_relation_1 :
-  forall a b, total_relation a b le.
+  forall a b, total_relation le a b.
 Proof.
   intros a b.
   apply total_order.
@@ -936,7 +936,7 @@ Admitted.
  *)
 
 Inductive empty_relation (a b:nat) : Prop :=
-  empty_relation_0 : a < b /\ b < a -> empty_relation a b.
+  empty_relation_0 : S a = b /\ S b = a -> empty_relation a b.
 
 (* ☐ *)
 
