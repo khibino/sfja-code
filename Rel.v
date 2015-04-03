@@ -55,7 +55,7 @@ Proof.
   inversion E.
   (* S n1 *)
   inversion E.
-  apply IHn1. exact H0.
+  apply IHn1. assumption.
 
   unfold partial_function.
   intros x y1 y2 P Q.
@@ -111,3 +111,225 @@ Proof.
   induction Hmo as [| m' Hm'o].
   (* le_n *) apply le_S. apply Hnm.
   (* le_S *) apply le_S. apply IHHm'o. Qed.
+
+(* ☐ *)
+
+(* 練習問題:★★, optional *)
+
+(*
+同じことを、oについての帰納法で証明しなさい。
+ *)
+
+Theorem lt_trans'' :
+  transitive lt.
+Proof.
+  unfold lt. unfold transitive.
+  intros n m o Hnm Hmo.
+  induction o as [| o'].
+
+  (* 0 *) inversion Hmo.
+  (* S o' *)
+    induction Hmo as [| o2].
+    (* destruct o' as [| o2]. *)
+    (* m = o' *) apply le_S. apply Hnm.
+    (* m = S o2 *) apply le_S. apply IHHmo.
+
+    (* apply le_trans with (a := (S n)) (b := (S m)) (c := (S o')). *)
+    (* (* nm *) apply le_S. apply Hnm. *)
+    (* (* mo' *) apply Hmo. *)
+Qed.
+
+(* ☐ *)
+
+Theorem le_Sn_le : forall n m, S n <= m -> n <= m.
+Proof.
+  intros n m H. apply le_trans with (S n).
+  apply le_S. apply le_n.
+  apply H. Qed.
+
+(* 練習問題:★, optional *)
+
+Lemma le_le_Sn :
+  forall n m, n <= S m -> n <= m \/ n = S m.
+Proof.
+  intros n m HnSm.
+
+  inversion HnSm.
+  (* le_n *) right. reflexivity.
+  (* le_S *) left.  apply H0.
+Qed.
+
+Theorem le_S_n :
+  forall n m, (S n <= S m) -> (n <= m).
+Proof.
+  intros n m H.
+
+  assert (S n <= m \/ S n = S m).
+  apply le_le_Sn with (n := (S n)).
+  assumption.
+
+  inversion H0.
+  (* S n <= m*)
+    apply le_Sn_le.
+    assumption.
+  (* S n = S m *)
+    inversion H1.
+    apply le_n.
+Qed.
+
+(* ☐ *)
+
+(* 練習問題:★★, optional(le_Sn_n_inf) *)
+
+(*
+以下の定理の非形式的な証明を示しなさい。
+
+定理: すべてのnについて、~(S n <= n)
+
+形式的な証明は後のoptionalな練習問題ですが、ここでは、形式的な証明を行わずに、まず非形式的な証明を示しなさい。
+ *)
+
+(*
+証明:
+ *)
+
+(* ☐ *)
+
+
+(* 練習問題:★, optional *)
+
+Theorem le_Sn_n :
+  forall n, ~ (S n <= n).
+Proof.
+  intros n NH.
+  induction n as [| n1].
+  (* 0 *) inversion NH.
+  (* S n1*)
+    apply IHn1.
+    apply le_S_n.
+    assumption.
+Qed.
+
+(* ☐ *)
+
+
+Definition symmetric {X: Type} (R: relation X) :=
+  forall a b : X, (R a b) -> (R b a).
+
+
+(* 練習問題:★★, optional *)
+
+Theorem le_not_symmetric :
+  ~ (symmetric le).
+Proof.
+  unfold symmetric.
+  intros contra.
+  assert (1 <= 0) as NH10.
+  apply contra.
+  apply le_S.
+  apply le_n.
+  inversion NH10.
+Qed.
+
+(* ☐ *)
+
+
+Definition antisymmetric {X: Type} (R: relation X) :=
+  forall a b : X, (R a b) -> (R b a) -> a = b.
+
+(* 練習問題:★★, optional *)
+
+Lemma le_eq_or_lt :
+  forall n m, n <= m -> n = m \/ n < m.
+Proof.
+  intros n m Hnm.
+  inversion Hnm.
+  (* le_n *) left. reflexivity.
+  (* le_S *)
+    right. unfold lt.
+    apply n_le_m__Sn_le_Sm.
+    assumption.
+Qed.
+
+Theorem le_antisymmetric :
+  antisymmetric le.
+Proof.
+  intros a b LH RH.
+
+  inversion LH.
+  reflexivity.
+
+  assert (S m <= m).
+  apply le_trans with a.
+  rewrite -> H0.
+  assumption.
+  assumption.
+
+  apply le_Sn_n in H1.
+  inversion H1.
+Qed.
+
+(* ☐ *)
+
+(* 練習問題:★★, optional *)
+
+Theorem le_step :
+  forall n m p,
+    n < m -> m <= S p -> n <= p.
+Proof.
+  intros n m p Hnm Hmp1.
+  unfold lt in Hnm.
+
+  assert (S n <= S p).
+  apply le_trans with m.
+  assumption.
+  assumption.
+
+  apply le_S_n.
+  assumption.
+Qed.
+
+(* ☐ *)
+
+
+Definition equivalence {X: Type} (R: relation X) :=
+  (reflexive R) /\ (symmetric R) /\ (transitive R).
+
+Definition order {X: Type} (R: relation X) :=
+  (reflexive R) /\ (antisymmetric R) /\ (transitive R).
+
+Definition preorder {X: Type} (R: relation X) :=
+  (reflexive R) /\ (transitive R).
+
+Theorem le_order :
+  order le.
+Proof.
+  unfold order. split.
+  Case "refl". apply le_reflexive.
+  split.
+    Case "antisym". apply le_antisymmetric.
+    Case "transitive". apply le_trans. Qed.
+
+Inductive clos_refl_trans {A: Type} (R: relation A) : relation A :=
+  | rt_step : forall x y, R x y -> clos_refl_trans R x y
+  | rt_refl : forall x, clos_refl_trans R x x
+  | rt_trans : forall x y z,
+                 clos_refl_trans R x y -> clos_refl_trans R y z -> clos_refl_trans R x z.
+
+Theorem next_nat_closure_is_le :
+  forall n m,
+    (n <= m) <-> ((clos_refl_trans next_nat) n m).
+Proof.
+  intros n m. split.
+  Case "->".
+    intro H. induction H.
+      apply rt_refl.
+      apply rt_trans with m. apply IHle. apply rt_step. apply nn.
+  Case "<-".
+    intro H. induction H.
+      SCase "rt_step". inversion H. apply le_S. apply le_n.
+      SCase "rt_refl". apply le_n.
+      SCase "rt_trans".
+        apply le_trans with y.
+        apply IHclos_refl_trans1.
+        apply IHclos_refl_trans2. Qed.
