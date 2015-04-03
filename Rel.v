@@ -256,17 +256,17 @@ Theorem le_antisymmetric :
 Proof.
   intros a b LH RH.
 
-  inversion LH.
+  inversion LH as [ | a1 Hab ].
   reflexivity.
 
-  assert (S m <= m).
+  assert (S a1 <= a1).
   apply le_trans with a.
-  rewrite -> H0.
+  rewrite -> H.
   assumption.
   assumption.
 
-  apply le_Sn_n in H1.
-  inversion H1.
+  apply le_Sn_n in H0.
+  inversion H0.
 Qed.
 
 (* ☐ *)
