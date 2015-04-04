@@ -1,4 +1,8 @@
+(* 関係の性質 *)
+
 Require Export Logic.
+
+(* 関係の基本性質 *)
 
 Definition relation (X: Type) := X -> X -> Prop.
 
@@ -310,6 +314,9 @@ Proof.
     Case "antisym". apply le_antisymmetric.
     Case "transitive". apply le_trans. Qed.
 
+
+(* 反射推移閉包 *)
+
 Inductive clos_refl_trans {A: Type} (R: relation A) : relation A :=
   | rt_step : forall x y, R x y -> clos_refl_trans R x y
   | rt_refl : forall x, clos_refl_trans R x x
@@ -333,3 +340,82 @@ Proof.
         apply le_trans with y.
         apply IHclos_refl_trans1.
         apply IHclos_refl_trans2. Qed.
+
+Inductive refl_step_closure {X: Type} (R: relation X)
+        : X -> X -> Prop :=
+  | rsc_refl : forall (x : X),
+                 refl_step_closure R x x
+  | rsc_step : forall (x y z : X),
+                 R x y ->
+                 refl_step_closure R y z ->
+                 refl_step_closure R x z.
+
+Tactic Notation "rt_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "rt_step" | Case_aux c "rt_refl"
+  | Case_aux c "rt_trans" ].
+
+Tactic Notation "rsc_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "rsc_refl" | Case_aux c "rsc_step" ].
+
+Theorem rsc_R : forall (X:Type) (R:relation X) (x y : X),
+                  R x y -> refl_step_closure R x y.
+Proof.
+  intros X R x y r.
+  apply rsc_step with y. apply r. apply rsc_refl. Qed.
+
+(* 練習問題:★★, optional(rsc_trans) *)
+
+Theorem rsc_trans :
+  forall (X:Type) (R: relation X) (x y z : X),
+      refl_step_closure R x y ->
+      refl_step_closure R y z ->
+      refl_step_closure R x z.
+Proof.
+  intros X R x y z Hxy Hyz.
+  rsc_cases (induction Hxy as [x| x y y' Rxy Hyy ]) Case.
+  (* refl *) assumption.
+  (* step *)
+    apply rsc_step with y.
+    assumption.
+    apply IHHyy. assumption.
+Qed.
+
+(* ☐ *)
+
+(* 練習問題:★★★, optional (rtc_rsc_coincide) *)
+
+Theorem rtc_rsc_coincide :
+  forall (X:Type) (R: relation X) (x y : X),
+    clos_refl_trans R x y <-> refl_step_closure R x y.
+Proof.
+  intros X R x y.
+  split; intro H.
+
+  (* -> *)
+    rt_cases (induction H as [x y Rxy | x | x y' y Hxy' IHxy' Hy'y IHy'y ]) Case.
+
+
+    (* rt_step *)
+      apply rsc_step with y. assumption.
+      apply rsc_refl.
+
+    (* rt_refl *)
+      apply rsc_refl.
+
+    (* rt_trans *)
+      apply rsc_trans with y'; assumption.
+
+  (* <- *)
+    rsc_cases (induction H as [x | x y' y Rxy' Hy'y IHy'y ]) Case.
+
+    (* rsc_refl *)
+      apply rt_refl.
+
+    (* rsc_step *)
+      apply rt_trans with y'.
+      apply rt_step. assumption.
+      assumption.
+Qed.
+(* ☐ *)
