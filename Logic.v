@@ -902,31 +902,57 @@ Proof.
       (* S n = S (S m') *) inversion EQ as [ EQ1 ]. apply le_n.
 Qed.
 
+Lemma inc_le_trans_LR :
+  forall n m, n <= m -> S n <= S m.
+Proof.
+  intros n m.
+  destruct (inc_le_trans n m) as [ LR RL ].
+  exact LR.
+Qed.
+
+Lemma inc_le_trans_RL :
+  forall n m,  S n <= S m -> n <= m.
+Proof.
+  intros n m.
+  destruct (inc_le_trans n m) as [ LR RL ].
+  exact RL.
+Qed.
+
+Lemma logic_O_le_n :
+  forall n, 0 <= n.
+Proof.
+  induction n as [| n'].
+  apply le_n.
+  apply le_S.
+  apply IHn'.
+Qed.
+
 Inductive total_relation (R : nat -> nat -> Prop) (a b:nat) : Prop :=
   total_order : R a b \/ R b a -> total_relation R a b.
 
-Example test_total_relation_1 :
+Theorem total_order_le :
   forall a b, total_relation le a b.
 Proof.
   intros a b.
   apply total_order.
   generalize dependent b.
-  induction a.
-
+  induction a as [| a' IHa ].
   (* a = 0 *)
-  left. induction b as [| b']. apply le_n. apply le_S. apply IHb'.
-
-  intros b. destruct (IHa b) as [ABH | BAH].
-  (* a <= b *)
-
-
-
-  (* apply total_relation_ind with le. intros a b H. *)
-  (* assert (forall a b, le a b \/ le b a). *)
-  (* intros a b. *)
-  (* induction a as [| a']. *)
-
-Admitted.
+    intro b. left. induction b as [| b' IHb].
+      (* b = 0 *)    apply le_n.
+      (* b = S b' *) apply le_S. apply IHb.
+  (* a = S a' *)
+    intro b.
+    destruct b as [| b'].
+      (* b = 0 *)    right. apply logic_O_le_n.
+      (* b = S b' *)
+        destruct (IHa b') as [ ABH | BAH ]
+        ; [ left | right ]
+        ; apply inc_le_trans_LR
+        ; [ (* a' <= b' *) exact ABH
+          | (* b' <= a' *) exact BAH
+          ].
+Qed.
 (* ☐ *)
 
 (*
