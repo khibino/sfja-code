@@ -48,6 +48,22 @@ Proof.
   inversion Nonsense.
 Qed.
 
+Theorem total_relation_not_a_partial_function :
+  ~ (forall
+        (R : nat -> nat -> Prop)
+        (Ord : forall (x y : nat), total_relation R x y),
+        partial_function (total_relation R)).
+Proof.
+  unfold partial_function.
+  intro H.
+  assert (0 = 1) as Nonsense.
+  (* apply H with (R := le) (Ord := total_order_le) (x := 0) (y1 := 0) (y2 := 1). *)
+  apply (H le total_order_le 0 0 1).
+  split; left; apply le_n.
+  split. left. apply le_S. apply le_n.
+  inversion Nonsense.
+Qed.
+
 Theorem empty_relation_not_a_partial_function :
   partial_function empty_relation.
 Proof.
