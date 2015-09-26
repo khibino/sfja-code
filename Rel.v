@@ -80,6 +80,8 @@ Proof.
   unfold partial_function.
   intros x y1 y2 P Q.
 
+  inversion Q.
+
   inversion P as [ [ HL HR ] ].
   rewrite <- HL in HR.
 
@@ -221,7 +223,6 @@ Qed.
 
 (* ☐ *)
 
-
 (* 練習問題:★, optional *)
 
 Theorem le_Sn_n :
@@ -241,6 +242,8 @@ Qed.
 
 Definition symmetric {X: Type} (R: relation X) :=
   forall a b : X, (R a b) -> (R b a).
+
+(** readcoqart 2015/07/18 ここまで **)
 
 
 (* 練習問題:★★, optional *)
