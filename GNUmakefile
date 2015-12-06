@@ -13,7 +13,8 @@ sources = \
 	Imp.v           \
 	Equiv.v         \
 	ImpList.v       \
-	Rel.v
+	Rel.v           \
+	Smallstep.v
 
 
 objs = $(sources:.v=.vo)
