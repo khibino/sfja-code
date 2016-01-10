@@ -769,3 +769,126 @@ Qed.
 
 End Temp5.
 End Temp4.
+
+(* マルチステップ簡約 *)
+
+(* マルチステップ簡約 *)
+
+Definition stepmany := refl_step_closure step.
+
+Notation " t '==>*' t' " := (stepmany t t') (at level 40).
+
+Lemma test_stepmany_1:
+      tm_plus
+        (tm_plus (tm_const 0) (tm_const 3))
+        (tm_plus (tm_const 2) (tm_const 4))
+   ==>*
+      tm_const (plus (plus 0 3) (plus 2 4)).
+Proof.
+  apply rsc_step with
+            (tm_plus
+                (tm_const (plus 0 3))
+                (tm_plus (tm_const 2) (tm_const 4))).
+  apply ST_Plus1. apply ST_PlusConstConst.
+  apply rsc_step with
+            (tm_plus
+                (tm_const (plus 0 3))
+                (tm_const (plus 2 4))).
+  apply ST_Plus2. apply v_const.
+  apply ST_PlusConstConst.
+  apply rsc_R.
+  apply ST_PlusConstConst.  Qed.
+
+Lemma test_stepmany_1':
+      tm_plus
+        (tm_plus (tm_const 0) (tm_const 3))
+        (tm_plus (tm_const 2) (tm_const 4))
+  ==>*
+      tm_const (plus (plus 0 3) (plus 2 4)).
+Proof.
+  eapply rsc_step. apply ST_Plus1. apply ST_PlusConstConst.
+  eapply rsc_step. apply ST_Plus2. apply v_const.
+  apply ST_PlusConstConst.
+  eapply rsc_step. apply ST_PlusConstConst.
+  apply rsc_refl.  Qed.
+
+
+(* **** 練習問題: ★ (test_stepmany_2) *)
+Lemma test_stepmany_2:
+  tm_const 3 ==>* tm_const 3.
+Proof.
+  apply rsc_refl.
+Qed.
+
+(* [] *)
+
+(* **** 練習問題: ★ (test_stepmany_3) *)
+Lemma test_stepmany_3:
+      tm_plus (tm_const 0) (tm_const 3)
+   ==>*
+      tm_plus (tm_const 0) (tm_const 3).
+Proof.
+  apply rsc_refl.
+Qed.
+
+(* [] *)
+
+(* **** 練習問題: ★★ (test_stepmany_4) *)
+Lemma test_stepmany_4:
+      tm_plus
+        (tm_const 0)
+        (tm_plus
+          (tm_const 2)
+          (tm_plus (tm_const 0) (tm_const 3)))
+  ==>*
+      tm_plus
+        (tm_const 0)
+        (tm_const (plus 2 (plus 0 3))).
+Proof.
+  eapply rsc_step.
+    apply ST_Plus2. exact (v_const 0).
+    apply ST_Plus2. exact (v_const 2).
+    apply ST_PlusConstConst.
+  eapply rsc_step.
+    apply ST_Plus2. exact (v_const 0).
+    apply ST_PlusConstConst.
+  eapply rsc_refl.
+Qed.
+
+(** [] *)
+
+(* 正規形再び *)
+
+Definition step_normal_form := normal_form step.
+
+Definition normal_form_of (t t' : tm) :=
+  (t ==>* t' /\ step_normal_form t').
+
+
+(* **** 練習問題: ★★★, optional (test_stepmany_3) *)
+Theorem normal_forms_unique:
+  partial_function normal_form_of.
+Proof.
+  unfold partial_function. unfold normal_form_of.  intros x y1 y2 P1 P2.
+  destruct P1 as [P11 P12]. destruct P2 as [P21 P22].
+  generalize dependent y2.
+  generalize dependent y1.
+
+Admitted.
+(*
+  induction x as [ n | t1 IH1 t2 IH2 ]
+  ; intros y1 P11 P12 y2 P21 P22.
+
+  (* x is const n *)
+    inversion P11; inversion P21; subst.
+
+    reflexivity.
+
+    inversion H1.
+    inversion H.
+    inversion H.
+
+  (* x is tm_plus *)
+    destruct (strong_progress t1) as [ V | N ].
+    destruct P11 as [ x | x y z Rxy Cyz ].
+ *)
