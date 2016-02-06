@@ -634,8 +634,10 @@ Inductive step : tm -> tm -> Prop :=
       t1 ==> t1' ->
       tm_if t1 t2 t3 ==> tm_if t1' t2 t3
 (* FILL IN HERE *)
-  | ST_IfShortCircuit : forall t1 t2,
-      tm_if t1 t2 t2 ==> t2
+  | ST_IfShortCircuit :
+      forall t1 t2,
+        value t2 ->
+        tm_if t1 t2 t2 ==> t2
   where " t '==>' t' " := (step t t').
 (** [] *)
 
@@ -656,7 +658,8 @@ Definition bool_step_prop4 :=
 Example bool_step_prop4_holds :
   bool_step_prop4.
 Proof.
-  exact (ST_IfShortCircuit (tm_if tm_true tm_true tm_true) tm_false).
+  apply ST_IfShortCircuit.
+  exact v_false.
 Qed.
 (** [] *)
 
@@ -704,7 +707,8 @@ Proof.
              (tm_if tm_true tm_false tm_false)
              tm_false).
       apply ST_If. exact (ST_IfTrue tm_true tm_true).
-      exact (ST_IfShortCircuit (tm_if tm_true tm_true tm_true) tm_false).
+      apply ST_IfShortCircuit.
+      exact v_false.
       discriminate NH.
 Qed.
 
@@ -869,26 +873,49 @@ Definition normal_form_of (t t' : tm) :=
 Theorem normal_forms_unique:
   partial_function normal_form_of.
 Proof.
-  unfold partial_function. unfold normal_form_of.  intros x y1 y2 P1 P2.
+  unfold partial_function. unfold normal_form_of.  intros x nf1 nf2 P1 P2.
   destruct P1 as [P11 P12]. destruct P2 as [P21 P22].
-  generalize dependent y2.
-  generalize dependent y1.
+  generalize dependent nf2.
+  generalize dependent nf1.
 
-Admitted.
-(*
   induction x as [ n | t1 IH1 t2 IH2 ]
-  ; intros y1 P11 P12 y2 P21 P22.
+  ; intros nf1 P11 P12 nf2 P21 P22.
 
   (* x is const n *)
-    inversion P11; inversion P21; subst.
+    rsc_cases (inversion P11 as [ x1 | x1 y1 z1 R1xy C1yz]) Case
+    ; rsc_cases (inversion P21 as [ x2 | x2 y2 z2 R2xy C2yz]) SCase
+    ; subst.
 
-    reflexivity.
-
-    inversion H1.
-    inversion H.
-    inversion H.
+      reflexivity.
+      inversion R2xy.
+      inversion R1xy.
+      inversion R1xy.
 
   (* x is tm_plus *)
-    destruct (strong_progress t1) as [ V | N ].
-    destruct P11 as [ x | x y z Rxy Cyz ].
+    destruct (strong_progress t1) as [ V1 | N1 ].
+    rsc_cases (inversion P11 as [ x | x y z Rxy Cyz ]) Case
+    ; rsc_cases (inversion P21 as [ x2 | x2 y2 z2 R2xy C2yz]) SCase
+    ; subst.
+
+      reflexivity.
+
+      apply ex_falso_quodlibet.
+      apply P12.
+      destruct (strong_progress t2) as [ V2 | N2 ].
+
+      destruct V1 as [ n1 ].
+      destruct V2 as [ n2 ].
+
+      exists (tm_const (plus n1 n2)).
+      exact (ST_PlusConstConst n1 n2).
+
+Admitted.
+
+
+
+
+    (* inversion P21. *)
+    (* reflexivity. *)
+
+(*
  *)
