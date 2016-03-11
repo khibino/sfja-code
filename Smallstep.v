@@ -873,8 +873,9 @@ Definition normal_form_of (t t' : tm) :=
 Theorem normal_forms_unique:
   partial_function normal_form_of.
 Proof.
-  unfold partial_function. unfold normal_form_of.  intros x nf1 nf2 P1 P2.
-  destruct P1 as [P11 P12]. destruct P2 as [P21 P22].
+  unfold partial_function. unfold normal_form_of.
+  intros x nf1 nf2 [P11 P12] [P21 P22].
+
   generalize dependent nf2.
   generalize dependent nf1.
 
@@ -893,29 +894,162 @@ Proof.
 
   (* x is tm_plus *)
     destruct (strong_progress t1) as [ V1 | N1 ].
+    destruct V1 as [ n1 ].
+
+    (* t1 is value *)
     rsc_cases (inversion P11 as [ x | x y z Rxy Cyz ]) Case
     ; rsc_cases (inversion P21 as [ x2 | x2 y2 z2 R2xy C2yz]) SCase
     ; subst.
 
+      (* P11 and P21 is rsc_refl *)
       reflexivity.
 
+      (* P11 is rsc_refl and P21 is rsc_step *)
       apply ex_falso_quodlibet.
       apply P12.
       destruct (strong_progress t2) as [ V2 | N2 ].
 
-      destruct V1 as [ n1 ].
-      destruct V2 as [ n2 ].
+        (* t2 is value *)
+        destruct V2 as [ n2 ].
 
-      exists (tm_const (plus n1 n2)).
-      exact (ST_PlusConstConst n1 n2).
+        exists (tm_const (plus n1 n2)).
+        exact (ST_PlusConstConst n1 n2).
+
+        (* t2 is not value *)
+        destruct N2 as [ t2' ].
+        exists (tm_plus (tm_const n1) t2').
+        apply ST_Plus2.
+        exact (v_const n1).
+        assumption.
+
+      (* P11 is rsc_step and P21 is rsc_refl *)
+      apply ex_falso_quodlibet.
+      apply P22.
+      destruct (strong_progress t2) as [ V2 | N2 ].
+
+        (* t2 is value *)
+        destruct V2 as [ n2 ].
+
+        exists (tm_const (plus n1 n2)).
+        exact (ST_PlusConstConst n1 n2).
+
+        (* t2 is not value *)
+        destruct N2 as [ t2' ].
+        exists (tm_plus (tm_const n1) t2').
+        apply ST_Plus2.
+        exact (v_const n1).
+        assumption.
+
+      (* P11 and P21 is rsc_step *)
+      destruct (strong_progress t2) as [ V2 | N2 ].
+
+        (* t2 is value *)
+        destruct V2 as [ n2 ].
 
 Admitted.
 
-
-
-
-    (* inversion P21. *)
-    (* reflexivity. *)
-
 (*
  *)
+
+Definition normalizing {X:Type} (R:relation X) :=
+  forall t, exists t',
+    (refl_step_closure R) t t' /\ normal_form R t'.
+
+
+Lemma stepmany_congr_1 : forall t1 t1' t2,
+     t1 ==>* t1' ->
+     tm_plus t1 t2 ==>* tm_plus t1' t2.
+Proof.
+  intros t1 t1' t2 H. rsc_cases (induction H) Case.
+    Case "rsc_refl". apply rsc_refl.
+    Case "rsc_step". apply rsc_step with (tm_plus y t2).
+        apply ST_Plus1. apply H.
+        apply IHrefl_step_closure. Qed.
+
+(** **** 練習問題: ★★ *)
+Lemma stepmany_congr_2 : forall t1 t2 t2',
+     value t1 ->
+     t2 ==>* t2' ->
+     tm_plus t1 t2 ==>* tm_plus t1 t2'.
+Proof.
+  (* FILL IN HERE *) Admitted.
+
+
+Theorem step_normalizing :
+  normalizing step.
+Proof.
+  unfold normalizing.
+  tm_cases (induction t) Case.
+    Case "tm_const".
+      exists (tm_const n).
+      split.
+      SCase "l". apply rsc_refl.
+      SCase "r".
+        (* We can use [rewrite] with "iff" statements, not
+           just equalities: *)
+        rewrite nf_same_as_value. apply v_const.
+    Case "tm_plus".
+      destruct IHt1 as [t1' H1]. destruct IHt2 as [t2' H2].
+      destruct H1 as [H11 H12]. destruct H2 as [H21 H22].
+      rewrite nf_same_as_value in H12. rewrite nf_same_as_value in H22.
+      inversion H12 as [n1]. inversion H22 as [n2].
+      rewrite <- H in H11.
+      rewrite <- H0 in H21.
+      exists (tm_const (plus n1 n2)).
+      split.
+        SCase "l".
+          apply rsc_trans with (tm_plus (tm_const n1) t2).
+          apply stepmany_congr_1. apply H11.
+          apply rsc_trans with
+             (tm_plus (tm_const n1) (tm_const n2)).
+          apply stepmany_congr_2. apply v_const. apply H21.
+          apply rsc_R. apply ST_PlusConstConst.
+        SCase "r".
+          rewrite nf_same_as_value. apply v_const.  Qed.
+
+
+(* ビッグステップ簡約とスモールステップ簡約の同値性 *)
+
+
+Lemma eval__value : forall t1 t2,
+     eval t1 t2 ->
+     value t2.
+Proof.
+  intros t1 t2 HE.
+  eval_cases (inversion HE) Case; apply v_const.  Qed.
+
+
+(* **** Exercise: 3 stars (eval__stepmany) *)
+(** **** 練習問題: ★★★ (eval__stepmany) *)
+(* You'll want to use the congruences and some properties of
+    [rsc] for this. *)
+(** この証明のために合同と[rsc]のいくつかの性質を使うのが良いでしょう。*)
+
+Theorem eval__stepmany : forall t v,
+  eval t v -> t ==>* v.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
+
+(* **** Exercise: 3 stars (eval__stepmany_inf) *)
+(** **** 練習問題: ★★★ (eval__stepmany_inf) *)
+(* Write an informal version of the proof of eval__stepmany.
+
+(* FILL IN HERE *)
+[]
+*)
+(** eval__stepmany の証明の非形式版を記述しなさい。
+
+(* ここを埋めなさい *)
+[]
+*)
+
+(* **** Exercise: 3 stars (step__eval) *)
+(** **** 練習問題: ★★★ (step__eval) *)
+Theorem step__eval : forall t t' v,
+     t ==> t' ->
+     t' || v ->
+     t || v.
+Proof.
+  (* FILL IN HERE *) Admitted.
+(** [] *)
