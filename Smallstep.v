@@ -873,32 +873,32 @@ Definition normal_form_of (t t' : tm) :=
 Theorem normal_forms_unique:
   partial_function normal_form_of.
 Proof.
-  unfold partial_function. unfold normal_form_of.
-  intros x nf1 nf2 [P11 P12] [P21 P22].
+  unfold partial_function. unfold normal_form_of.  intros x y1 y2 P1 P2.
+  destruct P1 as [P11 P12]. destruct P2 as [P21 P22].
+  generalize dependent y2.
 
-  generalize dependent nf2.
-  generalize dependent nf1.
+  generalize dependent y1.
 
   induction x as [ n | t1 IH1 t2 IH2 ]
-  ; intros nf1 P11 P12 nf2 P21 P22.
+  ; intros y1 P11 P12 y2 P21 P22.
 
   (* x is const n *)
-    rsc_cases (inversion P11 as [ x1 | x1 y1 z1 R1xy C1yz]) Case
-    ; rsc_cases (inversion P21 as [ x2 | x2 y2 z2 R2xy C2yz]) SCase
+    rsc_cases (inversion P11 as [ a1 | a1 b1 c1 R1ab C1bc]) Case
+    ; rsc_cases (inversion P21 as [ a2 | a2 b2 c2 R2ab C2bc]) SCase
     ; subst.
 
       reflexivity.
-      inversion R2xy.
-      inversion R1xy.
-      inversion R1xy.
+      inversion R2ab.
+      inversion R1ab.
+      inversion R1ab.
 
   (* x is tm_plus *)
     destruct (strong_progress t1) as [ V1 | N1 ].
     destruct V1 as [ n1 ].
 
     (* t1 is value *)
-    rsc_cases (inversion P11 as [ x | x y z Rxy Cyz ]) Case
-    ; rsc_cases (inversion P21 as [ x2 | x2 y2 z2 R2xy C2yz]) SCase
+    rsc_cases (inversion P11 as [ a1 | a1 b1 c1 R1ab C1bc ]) Case
+    ; rsc_cases (inversion P21 as [ a2 | a2 b2 c2 R2ab C2bc]) SCase
     ; subst.
 
       (* P11 and P21 is rsc_refl *)
