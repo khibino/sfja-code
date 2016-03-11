@@ -1053,3 +1053,95 @@ Theorem step__eval : forall t t' v,
 Proof.
   (* FILL IN HERE *) Admitted.
 (** [] *)
+
+
+Theorem stepmany__eval : forall t v,
+  normal_form_of t v -> t || v.
+Proof.
+  intros t v Hnorm.
+  unfold normal_form_of in Hnorm.
+  inversion Hnorm as [Hs Hnf]; clear Hnorm.
+  (* v is a normal form -> v = tm_const n for some n *)
+  rewrite nf_same_as_value in Hnf. inversion Hnf. clear Hnf.
+  rsc_cases (induction Hs) Case; subst.
+  Case "rsc_refl".
+    apply E_Const.
+  Case "rsc_step".
+    eapply step__eval. eassumption. apply IHHs. reflexivity.  Qed.
+
+
+Corollary stepmany_iff_eval : forall t v,
+  normal_form_of t v <-> t || v.
+Proof.
+  split.
+  Case "->". apply stepmany__eval.
+  Case "<-". unfold normal_form_of. intros E. split. apply eval__stepmany.
+    assumption. rewrite nf_same_as_value. eapply eval__value. eassumption.  Qed.
+
+
+(** さらなる練習問題 *)
+
+
+(* **** Exercise: 4 stars (combined_properties) *)
+(** **** 練習問題: ★★★★ (combined_properties) *)
+(* We've considered the arithmetic and conditional expressions
+    separately.  This exercise explores how the two interact. *)
+(** ここまでに算術式と条件式を別々に考えてきました。
+    この練習問題ではこの2つがどのように相互作用するかを調べます。*)
+
+Module Combined.
+
+Inductive tm : Type :=
+  | tm_const : nat -> tm
+  | tm_plus : tm -> tm -> tm
+  | tm_true : tm
+  | tm_false : tm
+  | tm_if : tm -> tm -> tm -> tm.
+
+Tactic Notation "tm_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "tm_const" | Case_aux c "tm_plus"
+  | Case_aux c "tm_true" | Case_aux c "tm_false" | Case_aux c "tm_if" ].
+
+Inductive value : tm -> Prop :=
+  | v_const : forall n, value (tm_const n)
+  | v_true : value tm_true
+  | v_false : value tm_false.
+
+Reserved Notation " t '==>' t' " (at level 40).
+
+Inductive step : tm -> tm -> Prop :=
+  | ST_PlusConstConst : forall n1 n2,
+      tm_plus (tm_const n1) (tm_const n2) ==> tm_const (plus n1 n2)
+  | ST_Plus1 : forall t1 t1' t2,
+      t1 ==> t1' ->
+      tm_plus t1 t2 ==> tm_plus t1' t2
+  | ST_Plus2 : forall v1 t2 t2',
+      value v1 ->
+      t2 ==> t2' ->
+      tm_plus v1 t2 ==> tm_plus v1 t2'
+  | ST_IfTrue : forall t1 t2,
+      tm_if tm_true t1 t2 ==> t1
+  | ST_IfFalse : forall t1 t2,
+      tm_if tm_false t1 t2 ==> t2
+  | ST_If : forall t1 t1' t2 t3,
+      t1 ==> t1' ->
+      tm_if t1 t2 t3 ==> tm_if t1' t2 t3
+
+  where " t '==>' t' " := (step t t').
+
+Tactic Notation "step_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "ST_PlusConstConst"
+  | Case_aux c "ST_Plus1" | Case_aux c "ST_Plus2"
+  | Case_aux c "ST_IfTrue" | Case_aux c "ST_IfFalse" | Case_aux c "ST_If" ].
+
+(** 前には、plus式とif式について、以下のことを別々に証明しました...
+
+    - ステップ関係が部分関数であること(つまり、決定性を持つこと)。
+
+    - すべての項が値であるか、1ステップ進むことができるかを主張する強進行補題。
+
+    結合した言語について、これらの性質を証明、または反証しなさい。*)
+
+End Combined.
