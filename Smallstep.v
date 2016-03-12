@@ -877,76 +877,35 @@ Proof.
   destruct P1 as [P11 P12]. destruct P2 as [P21 P22].
   generalize dependent y2.
 
-  generalize dependent y1.
+  unfold stepmany in P11.
 
-  induction x as [ n | t1 IH1 t2 IH2 ]
-  ; intros y1 P11 P12 y2 P21 P22.
+  rsc_cases (induction P11) Case
+  ; intros y2 P21 P22
+  ; rsc_cases (destruct P21) SCase.
 
-  (* x is const n *)
-    rsc_cases (inversion P11 as [ a1 | a1 b1 c1 R1ab C1bc]) Case
-    ; rsc_cases (inversion P21 as [ a2 | a2 b2 c2 R2ab C2bc]) SCase
-    ; subst.
-
-      reflexivity.
-      inversion R2ab.
-      inversion R1ab.
-      inversion R1ab.
-
-  (* x is tm_plus *)
-    destruct (strong_progress t1) as [ V1 | N1 ].
-    destruct V1 as [ n1 ].
-
-    (* t1 is value *)
-    rsc_cases (inversion P11 as [ a1 | a1 b1 c1 R1ab C1bc ]) Case
-    ; rsc_cases (inversion P21 as [ a2 | a2 b2 c2 R2ab C2bc]) SCase
-    ; subst.
-
-      (* P11 and P21 is rsc_refl *)
+    (* P11 is rsc_refl *)
+    + (* P21 is rsc_refl *)
       reflexivity.
 
-      (* P11 is rsc_refl and P21 is rsc_step *)
-      apply ex_falso_quodlibet.
-      apply P12.
-      destruct (strong_progress t2) as [ V2 | N2 ].
+    + (* P21 is rsc_step *)
+      elim P12.
+      exists y.
+      assumption.
 
-        (* t2 is value *)
-        destruct V2 as [ n2 ].
+    (* P11 is rsc_step *)
+    + (* P21 is rsc_refl *)
+      elim P22.
+      exists y.
+      assumption.
 
-        exists (tm_const (plus n1 n2)).
-        exact (ST_PlusConstConst n1 n2).
-
-        (* t2 is not value *)
-        destruct N2 as [ t2' ].
-        exists (tm_plus (tm_const n1) t2').
-        apply ST_Plus2.
-        exact (v_const n1).
-        assumption.
-
-      (* P11 is rsc_step and P21 is rsc_refl *)
-      apply ex_falso_quodlibet.
-      apply P22.
-      destruct (strong_progress t2) as [ V2 | N2 ].
-
-        (* t2 is value *)
-        destruct V2 as [ n2 ].
-
-        exists (tm_const (plus n1 n2)).
-        exact (ST_PlusConstConst n1 n2).
-
-        (* t2 is not value *)
-        destruct N2 as [ t2' ].
-        exists (tm_plus (tm_const n1) t2').
-        apply ST_Plus2.
-        exact (v_const n1).
-        assumption.
-
-      (* P11 and P21 is rsc_step *)
-      destruct (strong_progress t2) as [ V2 | N2 ].
-
-        (* t2 is value *)
-        destruct V2 as [ n2 ].
-
-Admitted.
+    + (* P21 is rsc_step *)
+      eapply IHP11.
+      assumption.
+      apply (step_deterministic x y0 y) in H0; subst.
+      assumption.
+      assumption.
+      assumption.
+Qed.
 
 (*
  *)
@@ -972,8 +931,16 @@ Lemma stepmany_congr_2 : forall t1 t2 t2',
      t2 ==>* t2' ->
      tm_plus t1 t2 ==>* tm_plus t1 t2'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t1 t2 t2' V1 M2.
 
+  rsc_cases (induction M2) Case.
+  - apply rsc_refl.
+  - apply rsc_step with (tm_plus t1 y).
+    apply ST_Plus2.
+    assumption.
+    assumption.
+    assumption.
+Qed.
 
 Theorem step_normalizing :
   normalizing step.
@@ -1028,7 +995,27 @@ Proof.
 Theorem eval__stepmany : forall t v,
   eval t v -> t ==>* v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t v EH.
+
+  eval_cases (induction EH) Case.
+  - Case "E_Const".
+    apply rsc_refl.
+
+  - Case "E_Plus".
+    eapply rsc_trans.
+    eapply stepmany_congr_1.
+    eassumption.
+
+    eapply rsc_trans.
+    eapply stepmany_congr_2.
+    exact (v_const n1).
+    eassumption.
+
+    eapply rsc_step.
+    eapply ST_PlusConstConst.
+    apply rsc_refl.
+Qed.
+
 (** [] *)
 
 (* **** Exercise: 3 stars (eval__stepmany_inf) *)
@@ -1143,5 +1130,94 @@ Tactic Notation "step_cases" tactic(first) ident(c) :=
     - すべての項が値であるか、1ステップ進むことができるかを主張する強進行補題。
 
     結合した言語について、これらの性質を証明、または反証しなさい。*)
+
+Lemma value_is_nf : forall t,
+  value t -> normal_form step t.
+Proof.
+  intros t H. inversion H.
+  - intros contra. inversion contra. inversion H1.
+  - intros contra. inversion contra. inversion H1.
+  - intros contra. inversion contra. inversion H1.
+Qed.
+
+Theorem step_deterministic:
+  partial_function step.
+Proof.
+  intros x y z YH ZH.
+  generalize dependent z.
+
+  step_cases (induction YH) Case
+  ; intros z ZH.
+
+  - Case "ST_PlusConstConst".
+    inversion ZH; subst.
+    + reflexivity.
+    + inversion H2.
+    + inversion H3.
+
+  - Case "ST_Plus1".
+    inversion ZH; subst.
+
+    + inversion YH.
+
+    + rewrite <- (IHYH t1'0).
+      reflexivity.
+      assumption.
+
+    + elim (value_is_nf t1 H1).
+      exists t1'.
+      assumption.
+
+  - Case "ST_Plus2".
+    inversion ZH; subst.
+
+    + inversion YH.
+
+    + elim (value_is_nf v1 H).
+      exists t1'.
+      assumption.
+
+    + rewrite <- (IHYH t2'0).
+      reflexivity.
+      assumption.
+
+  - Case "ST_IfTrue".
+    inversion ZH.
+
+    + reflexivity.
+
+    + inversion H3.
+
+  - Case "ST_IfFalse".
+    inversion ZH.
+
+    + reflexivity.
+
+    + inversion H3.
+
+  - Case "ST_If".
+    inversion ZH; subst.
+
+    + inversion YH.
+
+    + inversion YH.
+
+    + rewrite <- (IHYH t1'0).
+      reflexivity.
+      assumption.
+Qed.
+
+Theorem not_strong_progress :
+  ~ (forall t, value t \/ (exists t', t ==> t')).
+Proof.
+  intros contra.
+
+  destruct (contra (tm_plus tm_true tm_true)).
+  - inversion H.
+  - destruct H.
+    inversion H.
+    + inversion H3.
+    + inversion H4.
+Qed.
 
 End Combined.
