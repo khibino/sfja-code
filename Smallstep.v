@@ -1221,3 +1221,325 @@ Proof.
 Qed.
 
 End Combined.
+
+
+(* スモールステップ Imp *)
+
+
+Inductive aval : aexp -> Prop :=
+  av_num : forall n, aval (ANum n).
+
+Reserved Notation " t '/' st '==>a' t' " (at level 40, st at level 39).
+
+Inductive astep : state -> aexp -> aexp -> Prop :=
+  | AS_Id : forall st i,
+    AId i / st ==>a ANum (st i)
+  | AS_Plus : forall st n1 n2,
+    APlus (ANum n1) (ANum n2) / st ==>a ANum (plus n1 n2)
+  | AS_Plus1 : forall st a1 a1' a2,
+    a1 / st ==>a a1' ->
+    (APlus a1 a2) / st ==>a (APlus a1' a2)
+  | AS_Plus2 : forall st v1 a2 a2',
+    aval v1 ->
+    a2 / st ==>a a2' ->
+    (APlus v1 a2) / st ==>a (APlus v1 a2')
+  | AS_Minus : forall st n1 n2,
+    (AMinus (ANum n1) (ANum n2)) / st ==>a (ANum (minus n1 n2))
+  | AS_Minus1 : forall st a1 a1' a2,
+    a1 / st ==>a a1' ->
+    (AMinus a1 a2) / st ==>a (AMinus a1' a2)
+  | AS_Minus2 : forall st v1 a2 a2',
+    aval v1 ->
+    a2 / st ==>a a2' ->
+    (AMinus v1 a2) / st ==>a (AMinus v1 a2')
+  | AS_Mult : forall st n1 n2,
+    (AMult (ANum n1) (ANum n2)) / st ==>a (ANum (mult n1 n2))
+  | AS_Mult1 : forall st a1 a1' a2,
+    a1 / st ==>a a1' ->
+    (AMult (a1) (a2)) / st ==>a (AMult (a1') (a2))
+  | AS_Mult2 : forall st v1 a2 a2',
+    aval v1 ->
+    a2 / st ==>a a2' ->
+    (AMult v1 a2) / st ==>a (AMult v1 a2')
+
+  where " t '/' st '==>a' t' " := (astep st t t').
+
+Reserved Notation " t '/' st '==>b' t' " (at level 40, st at level 39).
+
+Inductive bstep : state -> bexp -> bexp -> Prop :=
+  | BS_Eq : forall st n1 n2,
+    (BEq (ANum n1) (ANum n2)) / st ==>b
+    (if (beq_nat n1 n2) then BTrue else BFalse)
+  | BS_Eq1 : forall st a1 a1' a2,
+    a1 / st ==>a a1' ->
+    (BEq a1 a2) / st ==>b (BEq a1' a2)
+  | BS_Eq2 : forall st v1 a2 a2',
+    aval v1 ->
+    a2 / st ==>a a2' ->
+    (BEq v1 a2) / st ==>b (BEq v1 a2')
+  | BS_LtEq : forall st n1 n2,
+    (BLe (ANum n1) (ANum n2)) / st ==>b
+             (if (ble_nat n1 n2) then BTrue else BFalse)
+  | BS_LtEq1 : forall st a1 a1' a2,
+    a1 / st ==>a a1' ->
+    (BLe a1 a2) / st ==>b (BLe a1' a2)
+  | BS_LtEq2 : forall st v1 a2 a2',
+    aval v1 ->
+    a2 / st ==>a a2' ->
+    (BLe v1 a2) / st ==>b (BLe v1 (a2'))
+  | BS_NotTrue : forall st,
+    (BNot BTrue) / st ==>b BFalse
+  | BS_NotFalse : forall st,
+    (BNot BFalse) / st ==>b BTrue
+  | BS_NotStep : forall st b1 b1',
+    b1 / st ==>b b1' ->
+    (BNot b1) / st ==>b (BNot b1')
+  | BS_AndTrueTrue : forall st,
+    (BAnd BTrue BTrue) / st ==>b BTrue
+  | BS_AndTrueFalse : forall st,
+    (BAnd BTrue BFalse) / st ==>b BFalse
+  | BS_AndFalse : forall st b2,
+    (BAnd BFalse b2) / st ==>b BFalse
+  | BS_AndTrueStep : forall st b2 b2',
+    b2 / st ==>b b2' ->
+    (BAnd BTrue b2) / st ==>b (BAnd BTrue b2')
+  | BS_AndStep : forall st b1 b1' b2,
+    b1 / st ==>b b1' ->
+    (BAnd b1 b2) / st ==>b (BAnd b1' b2)
+
+  where " t '/' st '==>b' t' " := (bstep st t t').
+
+Reserved Notation " t '/' st '==>' t' '/' st' "
+                  (at level 40, st at level 39, t' at level 39).
+
+Inductive cstep : (com * state) -> (com * state) -> Prop :=
+  | CS_AssStep : forall st i a a',
+    a / st ==>a a' ->
+    (i ::= a) / st ==> (i ::= a') / st
+  | CS_Ass : forall st i n,
+    (i ::= (ANum n)) / st ==> SKIP / (update st i n)
+  | CS_SeqStep : forall st c1 c1' st' c2,
+    c1 / st ==> c1' / st' ->
+    (c1 ; c2) / st ==> (c1' ; c2) / st'
+  | CS_SeqFinish : forall st c2,
+    (SKIP ; c2) / st ==> c2 / st
+  | CS_IfTrue : forall st c1 c2,
+    IFB BTrue THEN c1 ELSE c2 FI / st ==> c1 / st
+  | CS_IfFalse : forall st c1 c2,
+    IFB BFalse THEN c1 ELSE c2 FI / st ==> c2 / st
+  | CS_IfStep : forall st b b' c1 c2,
+    b / st ==>b b' ->
+    IFB b THEN c1 ELSE c2 FI / st ==> (IFB b' THEN c1 ELSE c2 FI) / st
+  | CS_While : forall st b c1,
+        (WHILE b DO c1 END) / st
+    ==> (IFB b THEN (c1; (WHILE b DO c1 END)) ELSE SKIP FI) / st
+
+  where " t '/' st '==>' t' '/' st' " := (cstep (t,st) (t',st')).
+
+(* 並列実行 Imp *)
+
+Module CImp.
+
+Inductive com : Type :=
+  | CSkip : com
+  | CAss : id -> aexp -> com
+  | CSeq : com -> com -> com
+  | CIf : bexp -> com -> com -> com
+  | CWhile : bexp -> com -> com
+  (* New: *)
+  | CPar : com -> com -> com.
+
+Tactic Notation "com_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "SKIP" | Case_aux c "::=" | Case_aux c ";"
+  | Case_aux c "IFB" | Case_aux c "WHILE" | Case_aux c "PAR" ].
+
+Notation "'SKIP'" :=
+  CSkip.
+Notation "l '::=' a" :=
+  (CAss l a) (at level 60).
+Notation "c1 ; c2" :=
+  (CSeq c1 c2) (at level 80, right associativity).
+Notation "'WHILE' b 'DO' c 'END'" :=
+  (CWhile b c) (at level 80, right associativity).
+Notation "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" :=
+  (CIf e1 e2 e3) (at level 80, right associativity).
+Notation "'PAR' c1 'WITH' c2 'END'" :=
+  (CPar c1 c2) (at level 80, right associativity).
+
+Inductive cstep : (com * state)  -> (com * state) -> Prop :=
+  | CS_AssStep : forall st i a a',
+    a / st ==>a a' ->
+    (i ::= a) / st ==> (i ::= a') / st
+  | CS_Ass : forall st i n,
+    (i ::= (ANum n)) / st ==> SKIP / (update st i n)
+  | CS_SeqStep : forall st c1 c1' st' c2,
+    c1 / st ==> c1' / st' ->
+    (c1 ; c2) / st ==> (c1' ; c2) / st'
+  | CS_SeqFinish : forall st c2,
+    (SKIP ; c2) / st ==> c2 / st
+  | CS_IfTrue : forall st c1 c2,
+    (IFB BTrue THEN c1 ELSE c2 FI) / st ==> c1 / st
+  | CS_IfFalse : forall st c1 c2,
+    (IFB BFalse THEN c1 ELSE c2 FI) / st ==> c2 / st
+  | CS_IfStep : forall st b b' c1 c2,
+    b /st ==>b b' ->
+    (IFB b THEN c1 ELSE c2 FI) / st ==> (IFB b' THEN c1 ELSE c2 FI) / st
+  | CS_While : forall st b c1,
+    (WHILE b DO c1 END) / st ==>
+             (IFB b THEN (c1; (WHILE b DO c1 END)) ELSE SKIP FI) / st
+  (* New: *)
+  | CS_Par1 : forall st c1 c1' c2 st',
+    c1 / st ==> c1' / st' ->
+    (PAR c1 WITH c2 END) / st ==> (PAR c1' WITH c2 END) / st'
+  | CS_Par2 : forall st c1 c2 c2' st',
+    c2 / st ==> c2' / st' ->
+    (PAR c1 WITH c2 END) / st ==> (PAR c1 WITH c2' END) / st'
+  | CS_ParDone : forall st,
+    (PAR SKIP WITH SKIP END) / st ==> SKIP / st
+  where " t '/' st '==>' t' '/' st' " := (cstep (t,st) (t',st')).
+
+Definition cstepmany := refl_step_closure cstep.
+
+Notation " t '/' st '==>*' t' '/' st' " :=
+   (refl_step_closure cstep  (t,st) (t',st'))
+   (at level 40, st at level 39, t' at level 39).
+
+Definition par_loop : com :=
+  PAR
+    Y ::= ANum 1
+  WITH
+    WHILE BEq (AId Y) (ANum 0) DO
+      X ::= APlus (AId X) (ANum 1)
+    END
+  END.
+
+Example par_loop_example_0:
+  exists st',
+       par_loop / empty_state  ==>* SKIP / st'
+    /\ st' X = 0.
+Proof.
+  eapply ex_intro. split.
+  unfold par_loop.
+  eapply rsc_step. apply CS_Par1.
+    apply CS_Ass.
+  eapply rsc_step. apply CS_Par2. apply CS_While.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq. simpl.
+  eapply rsc_step. apply CS_Par2. apply CS_IfFalse.
+  eapply rsc_step. apply CS_ParDone.
+  eapply rsc_refl.
+  reflexivity. Qed.
+
+Example par_loop_example_2:
+  exists st',
+       par_loop / empty_state ==>* SKIP / st'
+    /\ st' X = 2.
+Proof.
+  eapply ex_intro. split.
+  eapply rsc_step. apply CS_Par2. apply CS_While.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq. simpl.
+  eapply rsc_step. apply CS_Par2. apply CS_IfTrue.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AssStep. apply AS_Plus1. apply AS_Id.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AssStep. apply AS_Plus.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_Ass.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqFinish.
+
+  eapply rsc_step. apply CS_Par2. apply CS_While.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq. simpl.
+  eapply rsc_step. apply CS_Par2. apply CS_IfTrue.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AssStep. apply AS_Plus1. apply AS_Id.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AssStep. apply AS_Plus.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_Ass.
+
+  eapply rsc_step. apply CS_Par1. apply CS_Ass.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqFinish.
+  eapply rsc_step. apply CS_Par2. apply CS_While.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq. simpl.
+  eapply rsc_step. apply CS_Par2. apply CS_IfFalse.
+  eapply rsc_step. apply CS_ParDone.
+  eapply rsc_refl.
+  reflexivity. Qed.
+
+(* より一般に... *)
+
+(* **** 練習問題: ★★★, optional *)
+Lemma par_body_n__Sn : forall n st,
+  st X = n /\ st Y = 0 ->
+  par_loop / st ==>* par_loop / (update st X (S n)).
+Proof.
+  intros n st [Xn Y0].
+  unfold par_loop.
+  eapply rsc_step. eapply CS_Par2. apply CS_While.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id.
+  rewrite Y0.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq. simpl.
+  eapply rsc_step. apply CS_Par2. apply CS_IfTrue.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AssStep. apply AS_Plus1. apply AS_Id.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AssStep. apply AS_Plus.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_Ass.
+  eapply rsc_step. apply CS_Par2. apply CS_SeqFinish.
+
+  (* unfold par_loop. *)
+  rewrite -> Xn. rewrite plus_comm. simpl.
+  eapply rsc_refl.
+Qed.
+
+
+(* **** 練習問題: ★★★, optional *)
+Lemma par_body_n : forall n st,
+  st X = 0 /\ st Y = 0 ->
+  exists st',
+    par_loop / st ==>*  par_loop / st' /\ st' X = n /\ st' Y = 0.
+Proof.
+  (* FILL IN HERE *) Admitted.
+
+Theorem par_loop_any_X:
+  forall n, exists st',
+    par_loop / empty_state ==>*  SKIP / st'
+    /\ st' X = n.
+Proof.
+  intros n.
+  destruct (par_body_n n empty_state).
+    split; unfold update; reflexivity.
+
+  rename x into st.
+  destruct H as [H' [HX HY]].
+  exists (update st Y 1). split.
+  eapply rsc_trans with (par_loop,st). apply H'.
+  eapply rsc_step. apply CS_Par1. apply CS_Ass.
+  eapply rsc_step. apply CS_Par2. apply CS_While.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id. rewrite update_eq.
+  eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq. simpl.
+  eapply rsc_step. apply CS_Par2. apply CS_IfFalse.
+  eapply rsc_step. apply CS_ParDone.
+  apply rsc_refl.
+
+  rewrite update_neq. assumption. reflexivity.
+Qed.
+
+End CImp.
