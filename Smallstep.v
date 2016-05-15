@@ -1514,6 +1514,16 @@ Lemma par_body_n : forall n st,
   exists st',
     par_loop / st ==>*  par_loop / st' /\ st' X = n /\ st' Y = 0.
 Proof.
+  intros n st [X0 Y0].
+
+  induction n as [ | n' ].
+  + exists st.
+    split.
+    apply rsc_refl.
+    split; assumption.
+
+  + inversion IHn' as [ st' IH ].
+
   (* FILL IN HERE *) Admitted.
 
 Theorem par_loop_any_X:
