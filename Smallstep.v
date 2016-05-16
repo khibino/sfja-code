@@ -1522,7 +1522,15 @@ Proof.
     apply rsc_refl.
     split; assumption.
 
-  + inversion IHn' as [ st' IH ].
+  + destruct IHn' as [ st' IH ].
+    exists (update st' X (S n')).
+
+    (*
+    unfold par_loop.
+    eapply rsc_step. eapply CS_Par2. apply CS_While.
+    eapply rsc_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id.
+     *)
 
   (* FILL IN HERE *) Admitted.
 
