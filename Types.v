@@ -210,21 +210,30 @@ Proof.
   intros t v.
   destruct v as [ B | N ].
   + intros [ rf RH ].
-    inversion B; subst; inversion RH.
-  + induction N as [ | t' N' ].
-    - intros [ rf RH ].
-      inversion RH.
-    - intros [ rf RH ].
-      apply IHN'.
+    inversion B; subst; solve by inversion.
+  + induction N as [ | t' N' ]; intros [ rf RH ].
+    - solve by inversion.
+    - apply IHN'.
       inversion RH; subst.
       exists t1'.
       assumption.
 Qed.
 
-Lemma value_is_nf_nat :
+Lemma value_is_nf_term :
   forall t, value t -> step_normal_form t.
 Proof.
-  Admitted.
+  intros t v.
+  destruct v as [ B | N ].
+  + intros [ rf RH ].
+    inversion B; subst; inversion RH.
+  + induction t; intros [ rf RH ]; try (solve by inversion).
+    - apply IHt.
+      inversion N; subst.
+      assumption.
+      inversion RH; subst.
+      exists t1'.
+      assumption.
+Qed.
 
 (* ☐ *)
 
@@ -236,7 +245,61 @@ Proof.
 Theorem step_deterministic:
   partial_function step.
 Proof with eauto.
-Admitted.
+  intros x y1 y2 y1H.
+  generalize dependent y2.
+
+  assert (succ_nv_is_nf :
+            forall t t',
+              nvalue t ->
+              step (tm_succ t) t'->
+              False).
+  intros t t' NV SS.
+  apply (value_is_nf (tm_succ t)).
+  right. apply nv_succ. assumption.
+  exists t'. assumption.
+
+  step_cases (induction y1H) Case
+  ; intros y2 y2H.
+  (* ; try (inversion y2H; subst; auto). *)
+  + inversion y2H; subst...
+    - solve by inversion.
+  + inversion y2H; subst...
+    - solve by inversion.
+  + inversion y2H; subst.
+    - solve by inversion.
+    - solve by inversion.
+    - rewrite <- (IHy1H t1'0)...
+  + inversion y2H; subst...
+    - rewrite <- (IHy1H t1'0)...
+  + inversion y2H; subst.
+    - reflexivity.
+    - solve by inversion.
+  + inversion y2H; subst.
+    - reflexivity.
+    - elim (succ_nv_is_nf t1 t1').
+      assumption.
+      assumption.
+  + inversion y2H; subst.
+    - solve by inversion.
+    - elim (succ_nv_is_nf y2 t1').
+      assumption.
+      assumption.
+    - f_equal. apply IHy1H. assumption.
+  + inversion y2H; subst.
+    - reflexivity.
+    - solve by inversion.
+  + inversion y2H; subst.
+    - reflexivity.
+    - elim (succ_nv_is_nf t1 t1').
+      assumption.
+      assumption.
+  + inversion y2H; subst.
+    - solve by inversion.
+    - elim (succ_nv_is_nf t0 t1').
+      assumption.
+      assumption.
+    - f_equal. apply IHy1H. assumption.
+Qed.
 
 (* ☐ *)
 
