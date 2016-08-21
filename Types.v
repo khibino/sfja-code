@@ -259,46 +259,15 @@ Proof with eauto.
   exists t'. assumption.
 
   step_cases (induction y1H) Case
-  ; intros y2 y2H.
-  (* ; try (inversion y2H; subst; auto). *)
-  + inversion y2H; subst...
-    - solve by inversion.
-  + inversion y2H; subst...
-    - solve by inversion.
-  + inversion y2H; subst.
-    - solve by inversion.
-    - solve by inversion.
-    - rewrite <- (IHy1H t1'0)...
-  + inversion y2H; subst...
-    - rewrite <- (IHy1H t1'0)...
-  + inversion y2H; subst.
-    - reflexivity.
-    - solve by inversion.
-  + inversion y2H; subst.
-    - reflexivity.
-    - elim (succ_nv_is_nf t1 t1').
-      assumption.
-      assumption.
-  + inversion y2H; subst.
-    - solve by inversion.
-    - elim (succ_nv_is_nf y2 t1').
-      assumption.
-      assumption.
-    - f_equal. apply IHy1H. assumption.
-  + inversion y2H; subst.
-    - reflexivity.
-    - solve by inversion.
-  + inversion y2H; subst.
-    - reflexivity.
-    - elim (succ_nv_is_nf t1 t1').
-      assumption.
-      assumption.
-  + inversion y2H; subst.
-    - solve by inversion.
-    - elim (succ_nv_is_nf t0 t1').
-      assumption.
-      assumption.
-    - f_equal. apply IHy1H. assumption.
+  ; intros y2 y2H
+  ; inversion y2H; subst
+  ; try reflexivity
+  ; try (solve by inversion)
+  ; try (f_equal; apply IHy1H; assumption).
+  + elim (succ_nv_is_nf t1 t1'); assumption.
+  + elim (succ_nv_is_nf y2 t1'); assumption.
+  + elim (succ_nv_is_nf t1 t1'); assumption.
+  + elim (succ_nv_is_nf t0 t1'); assumption.
 Qed.
 
 (* ☐ *)
