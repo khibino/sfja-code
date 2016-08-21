@@ -333,7 +333,10 @@ Example succ_hastype_nat__hastype_nat : forall t,
   has_type (tm_succ t) ty_Nat ->
   has_type t ty_Nat.
 Proof.
-Admitted.
+  intros t SH.
+  inversion SH; subst.
+  assumption.
+Qed.
 
 (* ☐ *)
 
@@ -362,6 +365,39 @@ Admitted.
         。これが示そうとしていたことである。
 
       + t1 自体が ST_If で簡約できるとき、 t もまた簡約できる。
+
+  * 導出で直前に適用した規則が T_Succ である場合、 t = tm_succ t1 かつ、
+    ⊢ t : Nat、⊢ t1 : Nat である。
+    帰納法の仮定から、t1 が値であるか、さもなければ t1 が何らかの t1' に簡約できる。
+      + t1 が値のとき、t1 は nvalue か bvalue である。だが、⊢ t1 : Nat かつ、
+        bvalue なる項に Nat 型を割り当てる規則はないため、t1 は bvalue ではなく
+        nvalue である。
+        このとき t は tm_succ t1 でもあるので、規則 nv_succ から t は nvalue である。
+        よって t は値である。これが示そうとしていたことである。
+      + t1 自体が ST_Succ で簡約できるとき、t もまた簡約できる。
+
+  (*
+  | T_True :
+       has_type tm_true ty_Bool
+  | T_False :
+       has_type tm_false ty_Bool
+  | T_If : forall t1 t2 t3 T,
+       has_type t1 ty_Bool ->
+       has_type t2 T ->
+       has_type t3 T ->
+       has_type (tm_if t1 t2 t3) T
+  | T_Zero :
+       has_type tm_zero ty_Nat
+  | T_Succ : forall t1,
+       has_type t1 ty_Nat ->
+       has_type (tm_succ t1) ty_Nat
+  | T_Pred : forall t1,
+       has_type t1 ty_Nat ->
+       has_type (tm_pred t1) ty_Nat
+  | T_Iszero : forall t1,
+       has_type t1 ty_Nat ->
+       has_type (tm_iszero t1) ty_Bool.
+   *)
  *)
 
 (* ☐ *)
@@ -386,6 +422,29 @@ Proof with auto.
         solve by inversion 2.     SCase "t1 can take a step".
       destruct H as [t1' H1].
       exists (tm_if t1' t2 t3)...
+  Case "T_Succ".
+    destruct IHHT.
+    SCase "t1 is a value". destruct H.
+      SSCase "t1 is a bvalue".
+        solve by inversion 2.
+      SSCase "t1 is an nvalue".
+        left. right. apply nv_succ...
+    right.
+    destruct H as [t1' H1].
+    exists (tm_succ t1')...
+  Case "T_Pred".
+    destruct IHHT.
+    SCase "t1 is a value". destruct H.
+      SSCase "t1 is a bvalue".
+        solve by inversion 2.
+      SSCase "t1 is an nvalue".
+        right.
+        destruct H.
+        SSSCase "t1 is nv_zero".
+          exists tm_zero...
+        SSSCase "t1 is nv_succ".
+          exists t...
+
 Admitted.
 
 (* ☐ *)
@@ -506,6 +565,25 @@ has_type t T は常に成り立つでしょうか。そうだと思うのなら�
  *)
 
 (* ☐ *)
+
+(*
+  * step の決定性
+   - partial_function step
+
+  * 型のつく項に対する step の正規化
+    - forall t T, has_type t T -> nomalizing step t
+
+  * 進行
+    - forall t T,
+         has_type t T
+      -> value t \/ exists t', t ==> t'.
+
+  * 型保存
+    - forall t t' T,
+         has_type t T
+      -> t ==> t'
+      -> has_type t' T.
+ *)
 
 (* 練習問題: ★★ (variation1) *)
 
