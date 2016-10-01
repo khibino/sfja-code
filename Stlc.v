@@ -939,11 +939,12 @@ Proof.
   apply T_Abs.
   apply T_Abs.
   apply T_App with (T11 := ty_Bool).
-  apply T_Var. apply extend_eq.
-  apply T_App with (T11 := ty_Bool).
-  apply T_Var. apply extend_eq.
-  apply T_Var.
-  apply extend_neq. apply not_eq_beq_id_false. intro. solve by inversion.
+  - apply T_Var. apply extend_eq.
+  - apply T_App with (T11 := ty_Bool).
+    + apply T_Var. apply extend_eq.
+    + apply T_Var. rewrite extend_neq.
+      * apply extend_eq.
+      * auto.
 Qed.
 
 (** [] *)
@@ -975,7 +976,27 @@ Example typing_example_3 :
       T.
 
 Proof with auto.
-  (* FILL IN HERE *) Admitted.
+  exists
+    (ty_arrow
+       (ty_arrow ty_Bool ty_Bool)
+       (ty_arrow
+          (ty_arrow ty_Bool ty_Bool)
+          (ty_arrow ty_Bool ty_Bool))).
+
+  apply T_Abs. apply T_Abs. apply T_Abs.
+  eapply T_App.
+  - apply T_Var. rewrite extend_neq...
+    + apply extend_eq.
+    (* + auto. *)
+  - eapply T_App.
+    + apply T_Var. rewrite extend_neq...
+      * rewrite extend_neq...
+        { apply extend_eq. }
+        (* { auto. } *)
+      (* * auto. *)
+    + eapply T_Var...
+Qed.
+
 (** [] *)
 
 (* We can also show that terms are _not_ typable.  For example, let's
