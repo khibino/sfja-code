@@ -1057,7 +1057,18 @@ Example typing_nonexample_3 :
              (tm_app (tm_var a) (tm_var a)))
           T).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro P. destruct P as [ wS Q ]. destruct Q as [ wT R ].
+  inversion R; subst; clear R.
+  inversion H4; subst; clear H4.
+  inversion H5; subst; clear H5.
+  inversion H2; subst; clear H2.
+  inversion H1; subst; clear H1.
+  inversion H3. clear H3.
+  induction T11 as [ | T111 IHT11 T112 IHT12 ].
+  - solve by inversion.
+  - inversion H0. rewrite H2 in H1. apply IHT11. assumption.
+Qed.
+
 (** [] *)
 
 (* **** Exercise: 1 star (typing_statements) *)
@@ -1089,6 +1100,25 @@ Proof.
 
 []
 *)
+
+(*
+       - [b:Bool |- \a:Bool.a : Bool->Bool]
+       できる
+
+       - [exists T,  empty |- (\b:Bool->Bool. \a:Bool. b a) : T]
+       できる
+
+       - [exists T,  empty |- (\b:Bool->Bool. \a:Bool. a b) : T]
+       できない
+
+       - [exists S, a:S |- (\b:Bool->Bool. b) a : S]
+       できる
+
+       - [exists S, exists T,  a:S |- (a a a) : T]
+       できない
+
+       a : S -> S -> T === S
+ *)
 
 (* **** Exercise: 1 star, optional (more_typing_statements) *)
 (** **** 練習問題: ★, optional (more_typing_statements) *)
