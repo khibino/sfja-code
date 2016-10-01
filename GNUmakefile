@@ -15,7 +15,8 @@ sources = \
 	ImpList.v       \
 	Rel.v           \
 	Smallstep.v     \
-	Types.v
+	Types.v         \
+	Stlc.v
 
 
 objs = $(sources:.v=.vo)
