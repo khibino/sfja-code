@@ -704,7 +704,22 @@ Lemma step_example3 :
        (tm_app (tm_app idBBBB idBB) idB)
   ==>* idB.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply rsc_step.
+    apply ST_App1. apply ST_AppAbs. auto.
+    simpl.
+  eapply rsc_step.
+    apply ST_AppAbs. auto.
+    simpl.
+  apply rsc_refl.
+Qed.
+
+Lemma step_example3' :
+       (tm_app (tm_app idBBBB idBB) idB)
+  ==>* idB.
+Proof.
+  normalize.
+Qed.
+
 (** [] *)
 
 (* ###################################################################### *)
@@ -921,7 +936,16 @@ Example typing_example_2_full :
           (tm_app (tm_var b) (tm_app (tm_var b) (tm_var a)))))
     (ty_arrow ty_Bool (ty_arrow (ty_arrow ty_Bool ty_Bool) ty_Bool)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply T_Abs.
+  apply T_Abs.
+  apply T_App with (T11 := ty_Bool).
+  apply T_Var. apply extend_eq.
+  apply T_App with (T11 := ty_Bool).
+  apply T_Var. apply extend_eq.
+  apply T_Var.
+  apply extend_neq. apply not_eq_beq_id_false. intro. solve by inversion.
+Qed.
+
 (** [] *)
 
 (* **** Exercise: 2 stars (typing_example_3) *)
