@@ -1153,6 +1153,40 @@ Qed.
 []
 *)
 
+(*
+       - [exists T,  empty |- (\b:B->B->B. \a:B, b a) : T]
+         できる
+         T = B -> B
+
+       - [exists T,  empty |- (\a:A->B, \b:B-->C, \c:A, b (a c)):T]
+         できる
+         T = C
+
+       - [exists S, exists U, exists T,  a:S, b:U |- \c:A. a (b c) : T]
+         できる
+         forall A B C,
+         U = A -> B
+         S = B -> C
+         T = C
+
+         c: A
+         b: A -> B
+         a: B -> C
+
+       - [exists S, exists T,  a:S |- \b:A. a (a b) : T]
+         できる
+         forall A,
+         S = A -> A
+         T = A
+
+       - [exists S, exists U, exists T,  a:S |- a (\c:U. c a) : T]
+         できない
+         forall A B,
+         c : S -> B
+         (\c:U. c a) : (S -> B) -> B
+         a : ((S -> B) -> B) -> T === S
+ *)
+
 (* ###################################################################### *)
 (* ** Properties *)
 (** ** 性質 *)
