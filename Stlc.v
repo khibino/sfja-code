@@ -1336,6 +1336,24 @@ Corollary typable_empty__closed : forall t T,
     has_type empty t T  ->
     closed t.
 Proof.
+  intros.
+  intros x AP.
+  generalize dependent T.
+
+  afi_cases (induction AP) Case; intros.
+  - (* var *)
+    inversion H; subst.
+    solve by inversion.
+  - (* app1 *)
+    inversion H; subst.
+    apply (IHAP (ty_arrow T11 T)).
+    assumption.
+  - (* app2 *)
+    inversion H; subst.
+    apply (IHAP T11).
+    assumption.
+  - (* abs *)
+
   (* FILL IN HERE *) Admitted.
 (** [] *)
 
