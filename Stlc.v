@@ -1338,23 +1338,13 @@ Corollary typable_empty__closed : forall t T,
 Proof.
   intros.
   intros x AP.
-  generalize dependent T.
 
-  afi_cases (induction AP) Case; intros.
-  - (* var *)
-    inversion H; subst.
-    solve by inversion.
-  - (* app1 *)
-    inversion H; subst.
-    apply (IHAP (ty_arrow T11 T)).
-    assumption.
-  - (* app2 *)
-    inversion H; subst.
-    apply (IHAP T11).
-    assumption.
-  - (* abs *)
+  destruct (free_in_context x t T empty AP H)
+           as [ FT P ].
+  (* unfold empty in P. *)
+  solve by inversion.
+Qed.
 
-  (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (* Sometimes, when we have a proof [Gamma |- t : T], we will need to
