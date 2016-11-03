@@ -1338,24 +1338,44 @@ Corollary typable_empty__closed : forall t T,
 Proof.
   intros.
   intros x AP.
+  destruct (free_in_context x t T empty AP H) as [ T' Contra ].
+  solve by inversion.
+Qed.
+(** [] *)
+
+(*
+  intros.
+  intros x AP.
   generalize dependent T.
 
-  afi_cases (induction AP) Case; intros.
-  - (* var *)
+  tm_cases (induction t) Case; intros.
+  - (* tm_var *)
     inversion H; subst.
     solve by inversion.
-  - (* app1 *)
-    inversion H; subst.
-    apply (IHAP (ty_arrow T11 T)).
-    assumption.
-  - (* app2 *)
-    inversion H; subst.
-    apply (IHAP T11).
-    assumption.
-  - (* abs *)
-
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  - (* tm_app *)
+    inversion AP; inversion H; subst.
+    + (* t1 has free variable *)
+      apply IHt1 with (T := ty_arrow T11 T); assumption.
+    + (* t2 has free variable *)
+      apply IHt2 with (T := T11); assumption.
+  - (* tm_abs *)
+    inversion AP; inversion H; subst.
+    destruct (free_in_context x t0 T12 (extend empty i t) H5 H11).
+    rewrite extend_neq in H0.
+    + solve by inversion.
+    + apply not_eq_beq_id_false.
+      assumption.
+  - (* tm_true *)  solve by inversion.
+  - (* tm_false *) solve by inversion.
+  - (* tm_if *)
+    inversion AP; inversion H; subst.
+    + (* t1 has free variable *)
+      apply IHt1 with (T := ty_Bool); assumption.
+    + (* t2 has free variable *)
+      apply IHt2 with (T := T); assumption.
+    + (* t3 has free variable *)
+      apply IHt3 with (T := T); assumption.
+ *)
 
 (* Sometimes, when we have a proof [Gamma |- t : T], we will need to
     replace [Gamma] by a different context [Gamma'].  When is it safe
