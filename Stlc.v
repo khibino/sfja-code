@@ -1340,8 +1340,8 @@ Proof.
   intros x AP.
 
   destruct (free_in_context x t T empty AP H)
-           as [ FT P ].
-  (* unfold empty in P. *)
+           as [ T' Contra ].
+  (* unfold empty in Contra. *)
   solve by inversion.
 Qed.
 
