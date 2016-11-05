@@ -1813,27 +1813,25 @@ Qed.
     もしそうならば証明しなさい。そうでなければ、反例を挙げなさい。
 *)
 
-Theorem subject_expansion_stlc :
-  forall t t' T,
-    t ==> t' ->
-    has_type empty t' T ->
-    has_type empty t  T.
+(* 言えない。
+   反例は、
+   t  === tm_if tm_ture tm_ture idB
+   t' === tm_true
+   T  === ty_Bool
+ *)
+
+Theorem not_subject_expansion_stlc :
+  ~ (forall t t' T,
+       t ==> t' ->
+       has_type empty t' T ->
+       has_type empty t T).
 Proof.
-  intros t t' T R HT'.
-  generalize dependent T.
-  generalize dependent t'.
-
-  tm_cases (induction t) Case; intros.
-  - (* tm_var *)
-    solve by inversion.
-  - (* tm_app *)
-    inversion R; subst.
-    + (* ST_AppAbs *)
-      apply T_App with (T11 := T0).
-      apply T_Abs.
-      inversion HT'; subst.
-
-Admitted.
+  intro Contra.
+  remember
+    (Contra _ _ _ (ST_IfTrue tm_true idB) (T_True empty)) as N.
+  inversion N; subst.
+  inversion H6.
+Qed.
 
 (* [] *)
 
