@@ -1120,6 +1120,22 @@ Qed.
        a : S -> S -> T === S
  *)
 
+Example typing_statements_4 :
+  exists S, has_type (extend empty a S)
+                 (tm_app
+                    (tm_abs b (ty_arrow ty_Bool ty_Bool) (tm_var b))
+                    (tm_var a))
+                 S.
+Proof.
+  exists (ty_arrow ty_Bool ty_Bool).
+  apply T_App with (T11 := ty_arrow ty_Bool ty_Bool).
+  apply T_Abs.
+  apply T_Var.
+  apply extend_eq.
+  apply T_Var.
+  apply extend_eq.
+Qed.
+
 (* **** Exercise: 1 star, optional (more_typing_statements) *)
 (** **** 練習問題: ★, optional (more_typing_statements) *)
 
@@ -1156,18 +1172,18 @@ Qed.
 (*
        - [exists T,  empty |- (\b:B->B->B. \a:B, b a) : T]
          できる
-         T = B -> B
+         T = (B -> B -> B) -> B -> B -> B
 
        - [exists T,  empty |- (\a:A->B, \b:B-->C, \c:A, b (a c)):T]
          できる
-         T = C
+         T = (A -> B) -> (B -> C) -> A -> C
 
        - [exists S, exists U, exists T,  a:S, b:U |- \c:A. a (b c) : T]
          できる
-         forall A B C,
+         forall (A B C : ty),
          U = A -> B
          S = B -> C
-         T = C
+         T = A -> C
 
          c: A
          b: A -> B
@@ -1175,16 +1191,20 @@ Qed.
 
        - [exists S, exists T,  a:S |- \b:A. a (a b) : T]
          できる
-         forall A,
+         forall (A : ty),
          S = A -> A
-         T = A
+         T = A -> A
+
+         a: A -> A
+         b: A
 
        - [exists S, exists U, exists T,  a:S |- a (\c:U. c a) : T]
          できない
-         forall A B,
-         c : S -> B
-         (\c:U. c a) : (S -> B) -> B
-         a : ((S -> B) -> B) -> T === S
+         forall (A : ty),
+         c : S -> A
+         (\c:U. c a) : (S -> A) -> A
+         a : ((S -> A) -> A) -> T === S
+
  *)
 
 (* ###################################################################### *)
@@ -1959,7 +1979,9 @@ Proof.
     高々1つの型しか型付けされません。*)
 (* Formalize this statement and prove it. *)
 (** この主張を形式化し、証明しなさい。*)
-
+(Theorem types_unique :
+  forall Gamma t T
+has_type Gamma t T *)
 (* FILL IN HERE *)
 (** [] *)
 
