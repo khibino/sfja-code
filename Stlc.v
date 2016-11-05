@@ -1979,10 +1979,43 @@ Proof.
     高々1つの型しか型付けされません。*)
 (* Formalize this statement and prove it. *)
 (** この主張を形式化し、証明しなさい。*)
-(Theorem types_unique :
-  forall Gamma t T
-has_type Gamma t T *)
-(* FILL IN HERE *)
+Theorem types_unique :
+  forall Gamma t,
+  forall T0, has_type Gamma t T0 ->
+         forall T1, has_type Gamma t T1 ->
+                T0 = T1.
+Proof.
+  intros Gamma t T0 HT0 T1 HT1.
+  generalize dependent T1.
+  generalize dependent T0.
+  generalize dependent Gamma.
+
+  tm_cases (induction t) Case
+  ; intros; inversion HT0; inversion HT1; subst.
+  - (* tm_var *)
+    rewrite H5 in H1.
+    inversion H1.
+    reflexivity.
+  - (* tm_app *)
+    remember
+      (IHt1 Gamma
+            (ty_arrow T11 T0) H2
+            (ty_arrow T2 T1)  H8) as Feq.
+    inversion Feq; subst.
+    reflexivity.
+  - (* tm_abs *)
+    rewrite (IHt (extend Gamma i t)
+                 T12 H4
+                 T3  H10).
+    reflexivity.
+  - reflexivity.
+  - reflexivity.
+  - rewrite <- (IHt2 Gamma
+                     T0 H5
+                     T1 H13).
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (* ###################################################################### *)
