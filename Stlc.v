@@ -1679,6 +1679,8 @@ Proof with eauto.
       rewrite <- Heqe...
 Qed.
 
+(* 2016-11-05 kokomade *)
+
 (* The substitution lemma can be viewed as a kind of "commutation"
     property.  Intuitively, it says that substitution and typing can
     be done in either order: we can either assign types to the terms
@@ -1809,10 +1811,31 @@ Qed.
     [t ==> t'] かつ [has_type t' T] ならば [has_type t T]
     ということが常に言えるでしょうか？
     もしそうならば証明しなさい。そうでなければ、反例を挙げなさい。
-
-(* FILL IN HERE *)
-[]
 *)
+
+Theorem subject_expansion_stlc :
+  forall t t' T,
+    t ==> t' ->
+    has_type empty t' T ->
+    has_type empty t  T.
+Proof.
+  intros t t' T R HT'.
+  generalize dependent T.
+  generalize dependent t'.
+
+  tm_cases (induction t) Case; intros.
+  - (* tm_var *)
+    solve by inversion.
+  - (* tm_app *)
+    inversion R; subst.
+    + (* ST_AppAbs *)
+      apply T_App with (T11 := T0).
+      apply T_Abs.
+      inversion HT'; subst.
+
+Admitted.
+
+(* [] *)
 
 (* ###################################################################### *)
 (* *** Progress *)
