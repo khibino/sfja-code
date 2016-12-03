@@ -1679,8 +1679,6 @@ Proof with eauto.
       rewrite <- Heqe...
 Qed.
 
-(* 2016-11-05 kokomade *)
-
 (* The substitution lemma can be viewed as a kind of "commutation"
     property.  Intuitively, it says that substitution and typing can
     be done in either order: we can either assign types to the terms
@@ -2078,6 +2076,9 @@ Proof.
 Qed.
 
 (** [] *)
+
+
+(* 2016-12-03 kokomade *)
 
 (* ###################################################################### *)
 (* ** Additional Exercises *)
