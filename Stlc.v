@@ -2142,44 +2142,23 @@ Qed.
       - [step]の決定性
         真のまま
 
-      - 進行
-        偽に変わる
+        [step]の決定性は評価規則だけで決まり、
+        型付け規則には影響を受けない。
 
-        t === tm_app (if tm_true then idB else idB) tm_true
-        T === ty_Bool
+      - 進行
+        真のまま
+
+        value となる項の型付け規則が増えただけなので、
+        影響を受けない。
 
       - 保存
         真のまま
 
+        関数の型付けをおかしくする規則が追加されているが、
+        そのときには関数適用前の項に型が付かないので成立する。
+
 []
 *)
-
-Module Strange.
-
-Inductive has_type_strange : context -> tm -> ty -> Prop :=
-  | T_Var : forall Gamma x T,
-      Gamma x = Some T ->
-      has_type_strange Gamma (tm_var x) T
-  | T_Abs : forall Gamma x T11 T12 t12,
-      has_type_strange (extend Gamma x T11) t12 T12 ->
-      has_type_strange Gamma (tm_abs x T11 t12) (ty_arrow T11 T12)
-  | T_App : forall T11 T12 Gamma t1 t2,
-      has_type_strange Gamma t1 (ty_arrow T11 T12) ->
-      has_type_strange Gamma t2 T11 ->
-      has_type_strange Gamma (tm_app t1 t2) T12
-  | T_True : forall Gamma,
-       has_type_strange Gamma tm_true ty_Bool
-  | T_False : forall Gamma,
-       has_type_strange Gamma tm_false ty_Bool
-  | T_If : forall t1 t2 t3 T Gamma,
-       has_type_strange Gamma t1 ty_Bool ->
-       has_type_strange Gamma t2 T ->
-       has_type_strange Gamma t3 T ->
-       has_type_strange Gamma (tm_if t1 t2 t3) T
-  | T_Strange : forall x t,
-       has_type_strange empty (tm_abs x ty_Bool t) ty_Bool.
-
-End Strange.
 
 (* **** Exercise: 2 stars (stlc_variation2) *)
 (** **** 練習問題: ★★ (stlc_variation2) *)
@@ -2197,11 +2176,21 @@ End Strange.
       - [step]の決定性
         真のまま
 
+        評価規則が減るだけでなので成立する。
+
       - 進行
-        真のまま
+        偽に変わる
+
+        t === tm_app (if tm_true then idB else idB) tm_true
+        T === ty_Bool
+
+        t は value ではないのに step できない。
 
       - 保存
         真のまま
+
+        保存しなければならない場合が減るだけなので、
+        成立する。
 
 []
 *)
