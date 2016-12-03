@@ -2056,6 +2056,8 @@ Proof.
     inversion H1.
     reflexivity.
   - (* tm_app *)
+    (* apply (IHt1 Gamma (ty_arrow T2 T1)) in H2.
+       inversion H2; subst. *)
     remember
       (IHt1 Gamma
             (ty_arrow T11 T0) H2
@@ -2086,6 +2088,25 @@ Qed.
 (* Without peeking, write down the progress and preservation
     theorems for the simply typed lambda-calculus. *)
 (** なにも見ることなく、単純型付きラムダ計算の進行定理と保存定理を書き下しなさい。*)
+
+Theorem preservation_statement :
+  forall t t' T,
+    has_type empty t T ->
+    t ==> t' ->
+    has_type empty t' T.
+Proof.
+  exact preservation.
+Qed.
+
+
+Theorem progress_statement :
+  forall t T,
+    has_type empty t T ->
+    value t \/ exists t', t ==> t'.
+Proof.
+  exact progress.
+Qed.
+
 (** [] *)
 
 (* **** Exercise: 2 stars, optional (stlc_variation1) *)
