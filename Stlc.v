@@ -1983,7 +1983,45 @@ Theorem progress' : forall t T,
 Proof.
   intros t.
   tm_cases (induction t) Case; intros T Ht; auto.
-  (* FILL IN HERE *) Admitted.
+  + (* tm_var *) solve by inversion 2.
+  + (* tm_app *)
+    right.
+    inversion Ht; subst.
+    destruct (IHt1 (ty_arrow T11 T)) as [ V1 | [t1'] ].
+    - (* IHt1 prereq *) assumption.
+    - (* V1 *) destruct (IHt2 T11) as [ V2 | [t2'] ].
+      * (* IHt2 prereq *) assumption.
+      * (* V2 *)
+        inversion V1; subst.
+        { (* Print ST_AppAbs *)
+          exists (subst t2 x t).
+          apply ST_AppAbs.
+          assumption. }
+        { (* t1 tm_true *)  solve by inversion 2. }
+        { (* t1 tm_false *) solve by inversion 2. }
+      * (* t2' *)
+        exists (tm_app t1 t2').
+        apply ST_App2; assumption.
+    - (* t1' *)
+      exists (tm_app t1' t2).
+      apply ST_App1.
+      assumption.
+  + (* tm_if *)
+    inversion Ht; subst.
+    right.
+    destruct (IHt1 ty_Bool) as [ V1 | [t1'] ].
+    - (*IHt1 prereq *) assumption.
+    - (* t1 is V1 *)
+      inversion V1; subst.
+      * (* V1 is tm_abs *) solve by inversion.
+      * (* V1 is tm_true *)  exists t2. apply ST_IfTrue.
+      * (* V1 is tm_false *) exists t3. apply ST_IfFalse.
+    - (* t1 is P1 *)
+      exists (tm_if t1' t2 t3).
+      apply ST_If.
+      assumption.
+Qed.
+
 (** [] *)
 
 (* ###################################################################### *)
