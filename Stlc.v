@@ -2153,11 +2153,16 @@ Qed.
         影響を受けない。
 
       - 保存
-        真のまま
+        偽
 
-        関数の型付けをおかしくする規則が追加されているが、
-        そのときには関数適用前の項に型が付かないので成立する。
+        t === tm_app (tm_abs x ty_Bool (tm_abs y ty_Bool tm_true)) v
+        T === ty_arrwo ty_Bool ty_Bool
 
+        value v
+        t ==> t'
+        t' === tm_abs y ty_Bool tm_true : ty_Bool
+
+        T =/= ty_Bool
 []
 *)
 
