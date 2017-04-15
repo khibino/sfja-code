@@ -1525,7 +1525,7 @@ Module STLCExtended.
 
 Inductive ty : Type :=
   | ty_arrow : ty -> ty -> ty
-  (* | ty_prod  : ty -> ty -> ty *)
+  | ty_prod  : ty -> ty -> ty
   (* | ty_sum   : ty -> ty -> ty *)
   (* | ty_List  : ty -> ty *)
   | ty_Nat   : ty.
@@ -1549,9 +1549,9 @@ Inductive tm : Type :=
   (** <<
   (* 対 *)
 >> *)
-(*  | tm_pair : tm -> tm -> tm
+  | tm_pair : tm -> tm -> tm
   | tm_fst : tm -> tm
-  | tm_snd : tm -> tm *)
+  | tm_snd : tm -> tm
   (* sums *)
   (** <<
   (* 直和 *)
@@ -1625,7 +1625,7 @@ Inductive tm : Type :=
 Tactic Notation "tm_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "tm_var" | Case_aux c "tm_app" | Case_aux c "tm_abs"
-  (* | Case_aux c "tm_pair" | Case_aux c "tm_fst" | Case_aux c "tm_snd" *)
+  | Case_aux c "tm_pair" | Case_aux c "tm_fst" | Case_aux c "tm_snd"
   (* | Case_aux c "tm_inl" | Case_aux c "tm_inr" | Case_aux c "tm_case" *)
   (* | Case_aux c "tm_nil" | Case_aux c "tm_cons" | Case_aux c "tm_lcase" *)
   | Case_aux c "tm_nat" | Case_aux c "tm_succ" | Case_aux c "tm_pred"
@@ -1644,6 +1644,9 @@ Fixpoint subst (x:id) (s:tm) (t:tm) : tm :=
       if beq_id x y then s else t
   | tm_abs y T t1 =>
       tm_abs y T (if beq_id x y then t1 else (subst x s t1))
+  | tm_pair t1 t2 => tm_pair (subst x s t1) (subst x s t2)
+  | tm_fst t => tm_fst (subst x s t)
+  | tm_snd t => tm_snd (subst x s t)
   | tm_app t1 t2 =>
       tm_app (subst x s t1) (subst x s t2)
   | tm_nat n => t
@@ -1666,6 +1669,8 @@ Inductive value : tm -> Prop :=
       value (tm_abs x T11 t12)
   | v_nat : forall n,
       value (tm_nat n)
+  | v_pair : forall v1 v2,
+      value (tm_pair v1 v2)
   .
 
 Hint Constructors value.
@@ -1683,6 +1688,23 @@ Inductive step : tm -> tm -> Prop :=
          value v1 ->
          t2 ==> t2' ->
          (tm_app v1 t2) ==> (tm_app v1 t2')
+  | ST_Pair1 : forall t1 t1' t2,
+         t1 ==> t1' ->
+         (tm_pair t1 t2) ==> (tm_pair t1' t2)
+  | ST_Pair2 : forall v1 t2 t2',
+         value v1 ->
+         t2 ==> t2' ->
+         (tm_pair v1 t2) ==> (tm_pair v1 t2')
+  | ST_Fst : forall t1 t1',
+         t1 ==> t1' ->
+         (tm_fst t1) ==> (tm_fst t1')
+  | ST_Snd : forall t1 t1',
+         t1 ==> t1' ->
+         (tm_snd t1) ==> (tm_snd t1')
+  | ST_FstVal : forall v1 v2,
+         (tm_fst (tm_pair v1 v2)) ==> v1
+  | ST_SndVal : forall v1 v2,
+         (tm_snd (tm_pair v1 v2)) ==> v2
   | ST_SuccNat : forall n,
          tm_succ (tm_nat n) ==> tm_nat (S n)
   | ST_Succ : forall t1 t1',
@@ -1723,6 +1745,7 @@ where "t1 '==>' t2" := (step t1 t2).
 Tactic Notation "step_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "ST_AppAbs" | Case_aux c "ST_App1" | Case_aux c "ST_App2"
+  | Case_aux c "ST_Pair1" | Case_aux c "ST_Pair2"
   | Case_aux c "ST_SuccNat" | Case_aux c "ST_Succ"
   | Case_aux c "ST_PredNat" | Case_aux c "ST_Pred"
   | Case_aux c "ST_MultNats" | Case_aux c "ST_Mult1" | Case_aux c "ST_Mult2"
@@ -1758,6 +1781,16 @@ Inductive has_type : context -> tm -> ty -> Prop :=
       has_type Gamma t1 (ty_arrow T1 T2) ->
       has_type Gamma t2 T1 ->
       has_type Gamma (tm_app t1 t2) T2
+  | T_Pair : forall T1 T2 Gamma t1 t2,
+      has_type Gamma t1 T1 ->
+      has_type Gamma t2 T2 ->
+      has_type Gamma (tm_pair t1 t2) (ty_prod T1 T2)
+  | T_Fst : forall T1 T2 Gamma t,
+      has_type Gamma t (ty_prod T1 T2) ->
+      has_type Gamma (tm_fst t) T1
+  | T_Snd : forall T1 T2 Gamma t,
+      has_type Gamma t (ty_prod T1 T2) ->
+      has_type Gamma (tm_snd t) T2
   | T_Nat : forall Gamma n,
       has_type Gamma (tm_nat n) ty_Nat
   | T_Succ : forall Gamma t1,
@@ -1786,6 +1819,7 @@ Hint Constructors has_type.
 Tactic Notation "has_type_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "T_Var" | Case_aux c "T_Abs" | Case_aux c "T_App"
+  | Case_aux c "T_Pair" | Case_aux c "T_Fst" | Case_aux c "T_Snd"
   | Case_aux c "T_Nat" | Case_aux c "T_Succ" | Case_aux c "T_Pred"
   | Case_aux c "T_Mult"
   | Case_aux c "T_If0" | Case_aux c "T_Let"
@@ -1945,7 +1979,7 @@ End Numtest.
 (* *** Products *)
 (** *** 直積 *)
 
-(*
+
 Module Prodtest.
 
 (* ((5,6),7).fst.snd *)
@@ -1967,9 +2001,8 @@ Proof. unfold test. eauto 15. Qed.
 Example reduces :
   test ==>* tm_nat 6.
 Proof. unfold test. normalize. Qed.
-*)
-(** <<
-(*
+ *)
+
 Example typechecks :
   has_type (@empty ty) test ty_Nat.
 Proof. unfold test. eauto 15. Qed.
@@ -1977,11 +2010,9 @@ Proof. unfold test. eauto 15. Qed.
 Example reduces :
   test ==>* tm_nat 6.
 Proof. unfold test. normalize. Qed.
-*)
->> *)
+
 
 End Prodtest.
- *)
 
 (** *** [let] *)
 
@@ -2489,6 +2520,22 @@ Proof with eauto.
          [ST_App1] より [t1 t2 ==> t1' t2] である。 *)
 >> *)
       destruct H as [t1' Hstp]. exists (tm_app t1' t2)...
+  Case "T_Pair".
+    destruct (IHHt1 eq_refl)...
+  Case "T_Fst".
+    right. destruct (IHHt eq_refl) as [ V | [t'] ]...
+    SCase "t is value".
+      inversion V; subst.
+      solve by inversion.
+      solve by inversion.
+      exists v1...
+  Case "T_Snd".
+    right. destruct (IHHt eq_refl) as [ V | [t'] ]...
+    SCase "t is value".
+      inversion V; subst.
+      solve by inversion.
+      solve by inversion.
+      exists v2...
   Case "T_Nat".
     left...
   Case "T_Succ".
@@ -2497,11 +2544,13 @@ Proof with eauto.
     SCase "t1 is value".
       inversion V; subst...
       solve by inversion.
+      solve by inversion.
   Case "T_Pred".
     right.
     destruct (IHHt eq_refl) as [ V | [ ] ]...
     SCase "t1 is value".
-      inversion V as [ | [ | n' ] ]; subst...
+      inversion V as [ | [ | n' ] | ]; subst...
+      solve by inversion.
       solve by inversion.
   Case "T_Mult".
     right.
@@ -2513,11 +2562,14 @@ Proof with eauto.
       SSCase "t2 is value".
         inversion V2; subst...
         solve by inversion.
+        solve by inversion.
+        solve by inversion.
   Case "T_If0".
     right.
     destruct (IHHt1 eq_refl) as [ V1 | [ ] ]...
     SCase "t1 is value".
-      inversion V1 as [ | [ | n' ] ]; subst...
+      inversion V1 as [ | [ | n' ] | ]; subst...
+      solve by inversion.
       solve by inversion.
   Case "T_Let".
     right.
@@ -2540,6 +2592,16 @@ Inductive appears_free_in : id -> tm -> Prop :=
         y <> x  ->
         appears_free_in x t12 ->
         appears_free_in x (tm_abs y T11 t12)
+  | afi_pair1 : forall x t1 t2,
+      appears_free_in x t1 -> appears_free_in x (tm_pair t1 t2)
+  | afi_pair2 : forall x t1 t2,
+      appears_free_in x t2 -> appears_free_in x (tm_pair t1 t2)
+  | afi_fst : forall x t1,
+        appears_free_in x t1 ->
+        appears_free_in x (tm_fst t1)
+  | afi_snd : forall x t1,
+        appears_free_in x t1 ->
+        appears_free_in x (tm_snd t1)
   | afi_succ : forall x t1,
         appears_free_in x t1 ->
         appears_free_in x (tm_succ t1)
@@ -2586,6 +2648,8 @@ Proof with eauto.
     apply T_Abs... apply IHhas_type. intros y Hafi.
     unfold extend. remember (beq_id x y) as e.
     destruct e...
+  Case "T_Pair".
+    apply T_Pair...
   Case "T_Mult".
     apply T_Mult...
   Case "T_If0".
@@ -2838,6 +2902,9 @@ Proof with eauto.
 >> *)
       apply substitution_preserves_typing with T1...
       inversion HT1...
+  Case "T_Fst".
+    inversion HT; subst...
+    inversion HT; subst...
   Case "T_Let".
     inversion HE; subst...
     SCase "ST_LetValue".
@@ -2874,6 +2941,17 @@ Proof with eauto.
     rewrite (IHt (extend Gamma i t)
                  T12 H4
                  T3  H10)...
+  - (* tm_pair *)
+    rewrite (IHt1 Gamma T4 H8 T2 H2).
+    rewrite (IHt2 Gamma T5 H10 T3 H4)...
+  - (* tm_fst *)
+    remember
+      (IHt Gamma (ty_prod T0 T3) H1 (ty_prod T1 T5) H5) as Feq.
+    inversion Feq; subst...
+  - (* tm_snd *)
+    remember
+      (IHt Gamma (ty_prod T2 T0) H1 (ty_prod T4 T1) H5) as Feq.
+    inversion Feq; subst...
   - (* tm_let *)
     rewrite <- (IHt1 Gamma
                      T2 H4
