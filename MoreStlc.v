@@ -1526,7 +1526,7 @@ Module STLCExtended.
 Inductive ty : Type :=
   | ty_arrow : ty -> ty -> ty
   | ty_prod  : ty -> ty -> ty
-  (* | ty_sum   : ty -> ty -> ty *)
+  | ty_sum   : ty -> ty -> ty
   (* | ty_List  : ty -> ty *)
   | ty_Nat   : ty.
 
@@ -1556,9 +1556,9 @@ Inductive tm : Type :=
   (** <<
   (* 直和 *)
 >> *)
-(*  | tm_inl : ty -> tm -> tm
+  | tm_inl : ty -> tm -> tm
   | tm_inr : ty -> tm -> tm
-  | tm_case : tm -> id -> tm -> id -> tm -> tm *)
+  | tm_case : tm -> id -> tm -> id -> tm -> tm
           (* i.e., [case t0 of inl x1 => t1 | inr x2 => t2] *)
           (** <<
           (* 例えば、[case t0 of inl x1 => t1 | inr x2 => t2] *)
@@ -1626,7 +1626,7 @@ Tactic Notation "tm_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "tm_var" | Case_aux c "tm_app" | Case_aux c "tm_abs"
   | Case_aux c "tm_pair" | Case_aux c "tm_fst" | Case_aux c "tm_snd"
-  (* | Case_aux c "tm_inl" | Case_aux c "tm_inr" | Case_aux c "tm_case" *)
+  | Case_aux c "tm_inl" | Case_aux c "tm_inr" | Case_aux c "tm_case"
   (* | Case_aux c "tm_nil" | Case_aux c "tm_cons" | Case_aux c "tm_lcase" *)
   | Case_aux c "tm_nat" | Case_aux c "tm_succ" | Case_aux c "tm_pred"
   | Case_aux c "tm_mult" | Case_aux c "tm_if0"
@@ -1644,11 +1644,18 @@ Fixpoint subst (x:id) (s:tm) (t:tm) : tm :=
       if beq_id x y then s else t
   | tm_abs y T t1 =>
       tm_abs y T (if beq_id x y then t1 else (subst x s t1))
-  | tm_pair t1 t2 => tm_pair (subst x s t1) (subst x s t2)
-  | tm_fst t => tm_fst (subst x s t)
-  | tm_snd t => tm_snd (subst x s t)
   | tm_app t1 t2 =>
       tm_app (subst x s t1) (subst x s t2)
+  | tm_pair t1 t2 => tm_pair (subst x s t1) (subst x s t2)
+  | tm_fst t1 => tm_fst (subst x s t1)
+  | tm_snd t1 => tm_snd (subst x s t1)
+  | tm_inl T t1 => tm_inl T (subst x s t1)
+  | tm_inr T t1 => tm_inr T (subst x s t1)
+  | tm_case t0 x1 t1 x2 t2 =>
+    tm_case
+      (subst x s t0)
+      x1 (if beq_id x x1 then t1 else subst x s t1)
+      x2 (if beq_id x x2 then t2 else subst x s t2)
   | tm_nat n => t
   | tm_succ t1 => tm_succ (subst x s t1)
   | tm_pred t1 => tm_pred (subst x s t1)
@@ -1671,6 +1678,12 @@ Inductive value : tm -> Prop :=
       value (tm_nat n)
   | v_pair : forall v1 v2,
       value (tm_pair v1 v2)
+  | v_inl : forall v1 T1,
+      value v1 ->
+      value (tm_inl T1 v1)
+  | v_inr : forall v1 T1,
+      value v1 ->
+      value (tm_inr T1 v1)
   .
 
 Hint Constructors value.
@@ -1705,6 +1718,21 @@ Inductive step : tm -> tm -> Prop :=
          (tm_fst (tm_pair v1 v2)) ==> v1
   | ST_SndVal : forall v1 v2,
          (tm_snd (tm_pair v1 v2)) ==> v2
+  | ST_InL : forall t1 t1' T,
+         t1 ==> t1' ->
+         (tm_inl T t1) ==> (tm_inl T t1')
+  | ST_InR : forall t1 t1' T,
+         t1 ==> t1' ->
+         (tm_inr T t1) ==> (tm_inr T t1')
+  | ST_Case : forall t0 t0' x1 t1 x2 t2,
+         t0 ==> t0' ->
+         tm_case t0 x1 t1 x2 t2 ==> tm_case t0' x1 t1 x2 t2
+  | ST_CaseL : forall v x1 t1 T x2 t2,
+         value v ->
+         tm_case (tm_inl T v) x1 t1 x2 t2 ==> (subst x1 v t1)
+  | ST_CaseR : forall v x1 t1 x2 t2 T,
+         value v ->
+         tm_case (tm_inr T v) x1 t1 x2 t2 ==> (subst x2 v t2)
   | ST_SuccNat : forall n,
          tm_succ (tm_nat n) ==> tm_nat (S n)
   | ST_Succ : forall t1 t1',
@@ -1746,6 +1774,8 @@ Tactic Notation "step_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "ST_AppAbs" | Case_aux c "ST_App1" | Case_aux c "ST_App2"
   | Case_aux c "ST_Pair1" | Case_aux c "ST_Pair2"
+  | Case_aux c "ST_InL" | Case_aux c "ST_InR"
+  | Case_aux c "ST_Case" | Case_aux c "ST_CaseL" | Case_aux c "ST_CaseR"
   | Case_aux c "ST_SuccNat" | Case_aux c "ST_Succ"
   | Case_aux c "ST_PredNat" | Case_aux c "ST_Pred"
   | Case_aux c "ST_MultNats" | Case_aux c "ST_Mult1" | Case_aux c "ST_Mult2"
@@ -1791,6 +1821,17 @@ Inductive has_type : context -> tm -> ty -> Prop :=
   | T_Snd : forall T1 T2 Gamma t,
       has_type Gamma t (ty_prod T1 T2) ->
       has_type Gamma (tm_snd t) T2
+  | T_InL : forall T1 T2 Gamma t1,
+      has_type Gamma t1 T1 ->
+      has_type Gamma (tm_inl T1 t1) (ty_sum T1 T2)
+  | T_InR : forall T1 T2 Gamma t2,
+      has_type Gamma t2 T2 ->
+      has_type Gamma (tm_inr T2 t2) (ty_sum T1 T2)
+  | T_Case : forall T1 T2 T12 Gamma t0 x1 t1 x2 t2,
+      has_type Gamma t0 (ty_sum T1 T2) ->
+      has_type (extend Gamma x1 T1) t1 T12 ->
+      has_type (extend Gamma x2 T2) t2 T12 ->
+      has_type Gamma (tm_case t0 x1 t1 x2 t2) T12
   | T_Nat : forall Gamma n,
       has_type Gamma (tm_nat n) ty_Nat
   | T_Succ : forall Gamma t1,
@@ -1820,6 +1861,7 @@ Tactic Notation "has_type_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "T_Var" | Case_aux c "T_Abs" | Case_aux c "T_App"
   | Case_aux c "T_Pair" | Case_aux c "T_Fst" | Case_aux c "T_Snd"
+  | Case_aux c "T_InL" | Case_aux c "T_InR" | Case_aux c "T_Case"
   | Case_aux c "T_Nat" | Case_aux c "T_Succ" | Case_aux c "T_Pred"
   | Case_aux c "T_Mult"
   | Case_aux c "T_If0" | Case_aux c "T_Let"
@@ -2045,10 +2087,10 @@ Proof. unfold test. normalize. Qed.
 
 End LetTest.
 
+
 (* *** Sums *)
 (** *** 直和 *)
 
-(*
 Module Sumtest1.
 
 (* case (inl Nat 5) of
@@ -2072,8 +2114,7 @@ Example reduces :
   test ==>* (tm_nat 5).
 Proof. unfold test. normalize. Qed.
 *)
-(** <<
-(*
+
 Example typechecks :
   has_type (@empty ty) test ty_Nat.
 Proof. unfold test. eauto 15. Qed.
@@ -2081,11 +2122,8 @@ Proof. unfold test. eauto 15. Qed.
 Example reduces :
   test ==>* (tm_nat 5).
 Proof. unfold test. normalize. Qed.
-*)
->> *)
 
 End Sumtest1.
- *)
 
 (*
 Module Sumtest2.
@@ -2529,6 +2567,8 @@ Proof with eauto.
       solve by inversion.
       solve by inversion.
       exists v1...
+      solve by inversion.
+      solve by inversion.
   Case "T_Snd".
     right. destruct (IHHt eq_refl) as [ V | [t'] ]...
     SCase "t is value".
@@ -2536,31 +2576,44 @@ Proof with eauto.
       solve by inversion.
       solve by inversion.
       exists v2...
+      solve by inversion.
+      solve by inversion.
+  Case "T_InL".
+    destruct (IHHt eq_refl) as [ V | [ ] ]...
+  Case "T_InR".
+    destruct (IHHt eq_refl) as [ V | [ ] ]...
+  Case "T_Case".
+    right.
+    destruct (IHHt1 eq_refl) as [ V | [ t0' ] ].
+      inversion Ht1; subst; try solve by inversion.
+        exists (subst x1 t3 t1). apply ST_CaseL. now inversion V.
+        exists (subst x2 t3 t2). apply ST_CaseR. now inversion V.
+
+      exists (tm_case t0' x1 t1 x2 t2).
+      now constructor.
   Case "T_Nat".
     left...
   Case "T_Succ".
     right.
     destruct (IHHt eq_refl) as [ V | [ ] ]...
     SCase "t1 is value".
-      inversion V; subst...
-      solve by inversion.
-      solve by inversion.
+      inversion V; subst; eauto ; solve by inversion.
   Case "T_Pred".
     right.
     destruct (IHHt eq_refl) as [ V | [ ] ]...
     SCase "t1 is value".
-      inversion V as [ | [ | n' ] | ]; subst...
-      solve by inversion.
-      solve by inversion.
+      inversion V as [ | [ | n' ] | | | ]
+      ; subst; eauto; solve by inversion.
   Case "T_Mult".
     right.
     destruct (IHHt1 eq_refl) as [ V1 | [ ] ]...
     SCase "t1 is value".
-      inversion V1; subst...
+      inversion V1; subst.
       solve by inversion.
       destruct (IHHt2 eq_refl) as [ V2 | [ ] ]...
       SSCase "t2 is value".
-        inversion V2; subst...
+        inversion V2; subst; eauto; solve by inversion.
+      SSCase "t2 progress".
         solve by inversion.
         solve by inversion.
         solve by inversion.
@@ -2568,9 +2621,8 @@ Proof with eauto.
     right.
     destruct (IHHt1 eq_refl) as [ V1 | [ ] ]...
     SCase "t1 is value".
-      inversion V1 as [ | [ | n' ] | ]; subst...
-      solve by inversion.
-      solve by inversion.
+      inversion V1 as [ | [ | n' ] | | | ]
+      ; subst; eauto; solve by inversion.
   Case "T_Let".
     right.
     destruct (IHHt1 eq_refl) as [ V1 | [ ] ]...
