@@ -2664,11 +2664,11 @@ Inductive appears_free_in : id -> tm -> Prop :=
         appears_free_in x t1 ->
         appears_free_in x (tm_case t1 y2 t2 y3 t3)
   | afi_casel : forall x t1 y2 t2 y3 t3,
-        x <> y2 ->
+        y2 <> x ->
         appears_free_in x t2 ->
         appears_free_in x (tm_case t1 y2 t2 y3 t3)
   | afi_caser : forall x t1 y2 t2 y3 t3,
-        x <> y3 ->
+        y3 <> x ->
         appears_free_in x t3 ->
         appears_free_in x (tm_case t1 y2 t2 y3 t3)
   | afi_succ : forall x t1,
@@ -2719,6 +2719,21 @@ Proof with eauto.
     destruct e...
   Case "T_Pair".
     apply T_Pair...
+  Case "T_Case".
+     apply T_Case with T1 T2...
+       apply IHhas_type2.
+       intros x afiH.
+       remember (beq_id x1 x) as e.
+       destruct e.
+       unfold extend. rewrite <- Heqe...
+       unfold extend. rewrite <- Heqv...
+
+       apply IHhas_type3.
+       intros x afiH.
+       remember (beq_id x2 x) as e.
+       destruct e.
+       unfold extend. rewrite <- Heqe...
+       unfold extend. rewrite <- Heqv...
   Case "T_Mult".
     apply T_Mult...
   Case "T_If0".
