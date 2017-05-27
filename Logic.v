@@ -1,4 +1,4 @@
-Require Export "Prop".
+Require Export Props.
 
 Definition funny_prop1 := forall n, forall (E : ev n), ev (n+4).
 

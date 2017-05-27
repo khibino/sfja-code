@@ -7,7 +7,7 @@ sources = \
 	Lists.v		\
 	Poly.v		\
 	Gen.v		\
-	Prop.v		\
+	Props.v		\
 	Logic.v         \
 	SfLib.v         \
 	Imp.v           \
