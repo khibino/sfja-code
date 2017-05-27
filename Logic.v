@@ -1,5 +1,7 @@
 Require Export Props.
 
+Set Asymmetric Patterns. (* compatibility for Coq 8.4 pattern match *)
+
 Definition funny_prop1 := forall n, forall (E : ev n), ev (n+4).
 
 Definition funny_prop1' := forall n, forall (_ : ev n), ev (n+4).
