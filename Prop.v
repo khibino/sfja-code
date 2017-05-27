@@ -1,5 +1,7 @@
 Require Export Poly.
 
+Set Asymmetric Patterns. (* compatibility for Coq 8.4 pattern match *)
+
 Check (2 + 2 = 4).
 
 Check (ble_nat 3 2 = false).

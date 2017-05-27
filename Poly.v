@@ -2,6 +2,8 @@
 Require Export Lists.
 
 
+Set Asymmetric Patterns. (* compatibility for Coq 8.4 pattern match *)
+
 (* 多相的なリスト *)
 
 Inductive boollist : Type :=
