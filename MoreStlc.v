@@ -3052,6 +3052,8 @@ Qed.
 (** [] *)
 
 (* STLC の方にはあったので追加 *)
+(* 直和型のときには他方パラメータを限定する方法が無いと成立しない *)
+(*
 Theorem types_unique :
   forall Gamma t,
   forall T0, has_type Gamma t T0 ->
@@ -3091,10 +3093,15 @@ Proof with eauto.
     remember
       (IHt Gamma (ty_prod T2 T0) H1 (ty_prod T4 T1) H5) as Feq.
     inversion Feq; subst...
+  - (* tm_inl *)
+    admit.
+  - (* tm_inr *)
+    admit.
   - (* tm_let *)
     rewrite <- (IHt1 Gamma
                      T2 H4
                      T4 H11) in H12...
 Qed.
+ *)
 
 End STLCExtended.
