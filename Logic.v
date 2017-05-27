@@ -1215,28 +1215,10 @@ Proof.
   (* [] *) intros l1 l2 M. inversion M. reflexivity.
   (* x :: xs*)
     intros l1 l2 M T F.
-    inversion M as [| x0 xsL xsR xs0 ML | x0 xsL xsR xs0 MR].
+    inversion M as [| x0 xsL xsR xs0 ML E0 E1 E2 | x0 xsL xsR xs0 MR E0 E1 E2].
     (* L *)
-      (* subst x0 xs0 xsR. *)
-      rewrite -> H2 in H.
-      rewrite -> H.
-      inversion T as [| x1 xs1 p T' ].
-      (* all_nil *) rewrite <- H1 in H. inversion H.
-      (* all_cons *)
-        rewrite <- H1 in H.
-        inversion H.
-        simpl. rewrite -> p0.
 
-    (* (* merge_nil *) reflexivity. *)
-    (* merge_cons_L *)
-    (*
-      intros T F.
-
-      simpl. rewrite -> H1.
-      f_equal.
-      apply (IHxs xl1).
-     *)
-    (* merge_cons_R *)
+    (* R *)
 Admitted.
 (* ☐ *)
 
