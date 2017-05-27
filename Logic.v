@@ -1151,9 +1151,9 @@ Proof.
   (* [] *) reflexivity.
   (* x :: xs' *)
     intros H.
-    inversion H as [| P AP].
-    simpl. rewrite -> H2.
-    apply IHxs'. apply H3.
+    inversion H as [| x0 xs0 P AP].
+    simpl. rewrite -> P.
+    apply IHxs'. apply AP.
 Qed.
 
 (* ☐ *)
