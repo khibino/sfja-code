@@ -1,7 +1,8 @@
 
 (* Coq スタンダードライブラリから *)
 
-Require Omega. Require Export Bool.
+Require Export OmegaCompat.
+Require Export Bool.
 Require Export List.
 Require Export Arith.
 Require Export Arith.EqNat.

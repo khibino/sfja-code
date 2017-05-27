@@ -3,6 +3,7 @@
 	coqc $<
 
 sources = \
+	OmegaCompat.v	\
 	Basics.v	\
 	Lists.v		\
 	Poly.v		\
@@ -27,6 +28,10 @@ targets = $(objs)
 
 all: $(targets)
 
+OmegaCompat.v:
+	./gen-omega-compat.sh > $@
+
 clean:
+	$(RM) OmegaCompat.v
 	$(RM) $(objs)
 	$(RM) $(globs)
