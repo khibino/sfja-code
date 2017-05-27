@@ -2803,7 +2803,7 @@ Proof with eauto.
 >> *)
   tm_cases (induction t) Case;
     intros S Gamma Htypt; simpl; inversion Htypt; subst...
-  Case "tm_var".
+  - Case "tm_var".
     simpl. rename i into y.
     (* If t = y, we know that
          [empty |- v : U] and
@@ -2848,7 +2848,7 @@ Proof with eauto.
        [T_Var] より [Gamma |- y : S] を示すことができる。 *)
 >> *)
       apply T_Var... unfold extend in H1. rewrite <- Heqe in H1...
-  Case "tm_abs".
+  - Case "tm_abs".
     rename i into y. rename t into T11.
     (* If [t = tm_abs y T11 t0], then we know that
          [Gamma,x:U |- tm_abs y T11 t0 : T11->T12]
@@ -2917,7 +2917,47 @@ Proof with eauto.
       remember (beq_id y z) as e0. destruct e0...
       apply beq_id_eq in Heqe0. subst.
       rewrite <- Heqe...
-  Case "tm_let".
+  - Case "tm_case".
+    rename i into y1. rename i0 into y2. rename S into T12.
+    apply T_Case with T1 T2.
+    + now apply IHt1...
+
+    + remember (beq_id x y1) as e. destruct e.
+      * eapply context_invariance...
+        intros x0 afiH.
+        rewrite <- (beq_id_eq x y1)...
+        unfold extend.
+        remember (beq_id x x0) as ex. now destruct ex...
+      * apply IHt2.
+        eapply context_invariance...
+        intros x0 afiH.
+        unfold extend.
+        remember (beq_id x x0)  as ex.
+        remember (beq_id y1 x0) as ey.
+        destruct ex; destruct ey...
+        { apply ex_falso_quodlibet.
+          rewrite (beq_id_eq y1 x0) in Heqe...
+          rewrite (beq_id_eq x x0)  in Heqe...
+          now apply (beq_id_false_not_eq x0 x0)... }
+
+    + remember (beq_id x y2) as e. destruct e.
+      * eapply context_invariance...
+        intros x0 afiH.
+        rewrite <- (beq_id_eq x y2)...
+        unfold extend.
+        remember (beq_id x x0) as ex. now destruct ex...
+      * apply IHt3.
+        eapply context_invariance...
+        intros x0 afiH.
+        unfold extend.
+        remember (beq_id x x0)  as ex.
+        remember (beq_id y2 x0) as ey.
+        destruct ex; destruct ey...
+        { apply ex_falso_quodlibet.
+          rewrite (beq_id_eq y2 x0) in Heqe...
+          rewrite (beq_id_eq x x0)  in Heqe...
+          now apply (beq_id_false_not_eq x0 x0)... }
+  - Case "tm_let".
     rename i into y. rename S into T2.
     apply T_Let with T1...
     remember (beq_id x y) as e. destruct e.
