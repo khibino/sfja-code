@@ -1823,10 +1823,10 @@ Inductive has_type : context -> tm -> ty -> Prop :=
       has_type Gamma (tm_snd t) T2
   | T_InL : forall T1 T2 Gamma t1,
       has_type Gamma t1 T1 ->
-      has_type Gamma (tm_inl T1 t1) (ty_sum T1 T2)
+      has_type Gamma (tm_inl T2 t1) (ty_sum T1 T2)
   | T_InR : forall T1 T2 Gamma t2,
       has_type Gamma t2 T2 ->
-      has_type Gamma (tm_inr T2 t2) (ty_sum T1 T2)
+      has_type Gamma (tm_inr T1 t2) (ty_sum T1 T2)
   | T_Case : forall T1 T2 T12 Gamma t0 x1 t1 x2 t2,
       has_type Gamma t0 (ty_sum T1 T2) ->
       has_type (extend Gamma x1 T1) t1 T12 ->
@@ -3052,8 +3052,7 @@ Qed.
 (** [] *)
 
 (* STLC の方にはあったので追加 *)
-(* 直和型のときには他方パラメータを限定する方法が無いと成立しない *)
-(*
+
 Theorem types_unique :
   forall Gamma t,
   forall T0, has_type Gamma t T0 ->
@@ -3094,14 +3093,18 @@ Proof with eauto.
       (IHt Gamma (ty_prod T2 T0) H1 (ty_prod T4 T1) H5) as Feq.
     inversion Feq; subst...
   - (* tm_inl *)
-    admit.
+    rewrite (IHt Gamma T4 H8 T2 H3)...
   - (* tm_inr *)
-    admit.
+    rewrite (IHt Gamma T5 H8 T3 H3)...
+  - (* tm_case *)
+    remember
+      (IHt1 Gamma (ty_sum T2 T3) H6 (ty_sum T4 T5) H16) as Feq.
+    inversion Feq; subst...
   - (* tm_let *)
     rewrite <- (IHt1 Gamma
                      T2 H4
                      T4 H11) in H12...
 Qed.
- *)
+(* *)
 
 End STLCExtended.
