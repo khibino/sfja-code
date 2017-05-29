@@ -1527,17 +1527,14 @@ Inductive ty : Type :=
   | ty_arrow : ty -> ty -> ty
   | ty_prod  : ty -> ty -> ty
   | ty_sum   : ty -> ty -> ty
-  (* | ty_List  : ty -> ty *)
+  | ty_List  : ty -> ty
   | ty_Nat   : ty.
 
 Tactic Notation "ty_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "ty_arrow"
   | Case_aux c "ty_prod" | Case_aux c "ty_sum"
-  | Case_aux c "ty_Nat" ].
-(*  [ Case_aux c "ty_arrow"
-  | Case_aux c "ty_prod" | Case_aux c "ty_sum"
-  | Case_aux c "ty_List" | Case_aux c "ty_Nat" ]. *)
+  | Case_aux c "ty_List" | Case_aux c "ty_Nat" ].
 
 Inductive tm : Type :=
   (* pure STLC *)
@@ -1569,9 +1566,9 @@ Inductive tm : Type :=
   (** <<
   (* リスト *)
 >> *)
-(*  | tm_nil : ty -> tm
+  | tm_nil : ty -> tm
   | tm_cons : tm -> tm -> tm
-  | tm_lcase : tm -> tm -> id -> id -> tm -> tm *)
+  | tm_lcase : tm -> tm -> id -> id -> tm -> tm
           (* i.e., [lcase t1 of | nil -> t2 | x::y -> t3] *)
           (** <<
           (* 例えば、[lcase t1 of | nil -> t2 | x::y -> t3] *)
@@ -1629,7 +1626,7 @@ Tactic Notation "tm_cases" tactic(first) ident(c) :=
   [ Case_aux c "tm_var" | Case_aux c "tm_app" | Case_aux c "tm_abs"
   | Case_aux c "tm_pair" | Case_aux c "tm_fst" | Case_aux c "tm_snd"
   | Case_aux c "tm_inl" | Case_aux c "tm_inr" | Case_aux c "tm_case"
-  (* | Case_aux c "tm_nil" | Case_aux c "tm_cons" | Case_aux c "tm_lcase" *)
+  | Case_aux c "tm_nil" | Case_aux c "tm_cons" | Case_aux c "tm_lcase"
   | Case_aux c "tm_nat" | Case_aux c "tm_succ" | Case_aux c "tm_pred"
   | Case_aux c "tm_mult" | Case_aux c "tm_if0"
   | Case_aux c "tm_let"
@@ -1658,6 +1655,17 @@ Fixpoint subst (x:id) (s:tm) (t:tm) : tm :=
       (subst x s t0)
       x1 (if beq_id x x1 then t1 else subst x s t1)
       x2 (if beq_id x x2 then t2 else subst x s t2)
+  | tm_nil T => t
+  | tm_cons t1 t2 => tm_cons (subst x s t1) (subst x s t2)
+  | tm_lcase t0 t1 y1 y2 t2 =>
+    tm_lcase
+      (subst x s t0)
+      (subst x s t1)
+      y1 y2 (if beq_id x y1
+             then t1
+             else (if beq_id x y2
+                   then t1
+                   else (subst x s t2)))
   | tm_nat n => t
   | tm_succ t1 => tm_succ (subst x s t1)
   | tm_pred t1 => tm_pred (subst x s t1)
@@ -1686,6 +1694,12 @@ Inductive value : tm -> Prop :=
   | v_inr : forall v1 T1,
       value v1 ->
       value (tm_inr T1 v1)
+  | v_nil : forall T,
+      value (tm_nil T)
+  | v_cons : forall vh vt,
+      value vh ->
+      value vt ->
+      value (tm_cons vh vt)
   .
 
 Hint Constructors value.
@@ -1735,6 +1749,19 @@ Inductive step : tm -> tm -> Prop :=
   | ST_CaseR : forall v x1 t1 x2 t2 T,
          value v ->
          tm_case (tm_inr T v) x1 t1 x2 t2 ==> (subst x2 v t2)
+  | ST_Cons1 : forall t1 t1' t2,
+         t1 ==> t1' ->
+         tm_cons t1 t2 ==> tm_cons t1' t2
+  | ST_Cons2 : forall t1 t2 t2',
+         t2 ==> t2' ->
+         tm_cons t1 t2 ==> tm_cons t1 t2'
+  | ST_Lcase1 : forall t1 t1' t2 xh xt t3,
+         t1 ==> t1' ->
+         tm_lcase t1 t2 xh xt t3 ==> tm_lcase t1' t2 xh xt t3
+  | ST_LcaseNil : forall T t2 xh xt t3,
+         tm_lcase (tm_nil T) t2 xh xt t3 ==> t2
+  | ST_LcaseCons : forall vh vt t2 xh xt t3,
+         tm_lcase (tm_cons vh vt) t2 xh xt t3 ==> (subst xt vt (subst xh vh t3))
   | ST_SuccNat : forall n,
          tm_succ (tm_nat n) ==> tm_nat (S n)
   | ST_Succ : forall t1 t1',
@@ -1778,6 +1805,7 @@ Tactic Notation "step_cases" tactic(first) ident(c) :=
   | Case_aux c "ST_Pair1" | Case_aux c "ST_Pair2"
   | Case_aux c "ST_Inl" | Case_aux c "ST_Inr"
   | Case_aux c "ST_Case" | Case_aux c "ST_CaseL" | Case_aux c "ST_CaseR"
+  | Case_aux c "ST_Lcase1" | Case_aux c "ST_LcaseNil" | Case_aux c "ST_LcaseCons"
   | Case_aux c "ST_SuccNat" | Case_aux c "ST_Succ"
   | Case_aux c "ST_PredNat" | Case_aux c "ST_Pred"
   | Case_aux c "ST_MultNats" | Case_aux c "ST_Mult1" | Case_aux c "ST_Mult2"
@@ -1834,6 +1862,17 @@ Inductive has_type : context -> tm -> ty -> Prop :=
       has_type (extend Gamma x1 T1) t1 T12 ->
       has_type (extend Gamma x2 T2) t2 T12 ->
       has_type Gamma (tm_case t0 x1 t1 x2 t2) T12
+  | T_Nil : forall T Gamma,
+      has_type Gamma (tm_nil T) (ty_List T)
+  | T_Cons : forall T Gamma t1 t2,
+      has_type Gamma t1 T ->
+      has_type Gamma t2 (ty_List T) ->
+      has_type Gamma (tm_cons t1 t2) (ty_List T)
+  | T_Lcase : forall T1 T Gamma t1 t2 xh xt t3,
+      has_type Gamma t1 (ty_List T1) ->
+      has_type Gamma t2 T ->
+      has_type (extend (extend Gamma xh T1) xt (ty_List T1)) t3 T ->
+      has_type Gamma (tm_lcase t1 t2 xh xt t3) T
   | T_Nat : forall Gamma n,
       has_type Gamma (tm_nat n) ty_Nat
   | T_Succ : forall Gamma t1,
@@ -1864,6 +1903,7 @@ Tactic Notation "has_type_cases" tactic(first) ident(c) :=
   [ Case_aux c "T_Var" | Case_aux c "T_Abs" | Case_aux c "T_App"
   | Case_aux c "T_Pair" | Case_aux c "T_Fst" | Case_aux c "T_Snd"
   | Case_aux c "T_Inl" | Case_aux c "T_Inr" | Case_aux c "T_Case"
+  | Case_aux c "T_Nil" | Case_aux c "T_Cons" | Case_aux c "T_Lcase"
   | Case_aux c "T_Nat" | Case_aux c "T_Succ" | Case_aux c "T_Pred"
   | Case_aux c "T_Mult"
   | Case_aux c "T_If0" | Case_aux c "T_Let"
@@ -2176,7 +2216,6 @@ End Sumtest2.
 (* *** Lists *)
 (** *** リスト *)
 
-(*
 Module ListTest.
 
 (* let l = cons 5 (cons 6 (nil Nat)) in
@@ -2204,8 +2243,7 @@ Example reduces :
   test ==>* (tm_nat 25).
 Proof. unfold test. normalize. Qed.
 *)
-(** <<
-(*
+
 Example typechecks :
   has_type (@empty ty) test ty_Nat.
 Proof. unfold test. eauto 20. Qed.
@@ -2213,11 +2251,8 @@ Proof. unfold test. eauto 20. Qed.
 Example reduces :
   test ==>* (tm_nat 25).
 Proof. unfold test. normalize. Qed.
-*)
->> *)
 
 End ListTest.
- *)
 
 (** *** [fix] *)
 (*
