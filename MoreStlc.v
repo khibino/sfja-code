@@ -2595,21 +2595,13 @@ Proof with eauto.
   Case "T_Fst".
     right. destruct (IHHt eq_refl) as [ V | [t'] ]...
     SCase "t is value".
-      inversion V; subst.
-      solve by inversion.
-      solve by inversion.
+      inversion V; subst; try solve by inversion.
       exists v1...
-      solve by inversion.
-      solve by inversion.
   Case "T_Snd".
     right. destruct (IHHt eq_refl) as [ V | [t'] ]...
     SCase "t is value".
-      inversion V; subst.
-      solve by inversion.
-      solve by inversion.
+      inversion V; subst; try solve by inversion.
       exists v2...
-      solve by inversion.
-      solve by inversion.
   Case "T_Inl".
     destruct (IHHt eq_refl) as [ V | [ ] ]...
   Case "T_Inr".
@@ -2623,8 +2615,23 @@ Proof with eauto.
 
       exists (tm_case t0' x1 t1 x2 t2).
       now constructor.
+  Case "T_Nil".
+    now left...
+  Case "T_Cons".
+    destruct (IHHt1 eq_refl) as [ VH | [ t1' ] ].
+    destruct (IHHt2 eq_refl) as [ VT | [ t2' ] ].
+    left. now eauto.
+    right. now eauto.
+    right. now eauto.
+  Case "T_Lcase".
+    right.
+    destruct (IHHt1 eq_refl) as [ VH | [ t1' ] ].
+    inversion Ht1; inversion VH; subst; try solve by inversion.
+    now eauto.
+    now eauto.
+    now eauto.
   Case "T_Nat".
-    left...
+   left...
   Case "T_Succ".
     right.
     destruct (IHHt eq_refl) as [ V | [ ] ]...
@@ -2634,26 +2641,23 @@ Proof with eauto.
     right.
     destruct (IHHt eq_refl) as [ V | [ ] ]...
     SCase "t1 is value".
-      inversion V as [ | [ | n' ] | | | ]
+      inversion V as [ | [ | n' ] | | | | | ]
       ; subst; eauto; solve by inversion.
   Case "T_Mult".
     right.
     destruct (IHHt1 eq_refl) as [ V1 | [ ] ]...
     SCase "t1 is value".
-      inversion V1; subst.
-      solve by inversion.
+      inversion V1; subst; try solve by inversion.
+      (* solve by inversion. *)
       destruct (IHHt2 eq_refl) as [ V2 | [ ] ]...
       SSCase "t2 is value".
-        inversion V2; subst; eauto; solve by inversion.
-      SSCase "t2 progress".
-        solve by inversion.
-        solve by inversion.
-        solve by inversion.
+        inversion V2; subst; try solve by inversion; now eauto.
+      (* SSCase "t2 progress". (* solved by inversion *) *)
   Case "T_If0".
     right.
     destruct (IHHt1 eq_refl) as [ V1 | [ ] ]...
     SCase "t1 is value".
-      inversion V1 as [ | [ | n' ] | | | ]
+      inversion V1 as [ | [ | n' ] | | | | | ]
       ; subst; eauto; solve by inversion.
   Case "T_Let".
     right.
