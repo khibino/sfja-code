@@ -1532,7 +1532,9 @@ Inductive ty : Type :=
 
 Tactic Notation "ty_cases" tactic(first) ident(c) :=
   first;
-  [ Case_aux c "ty_arrow" | Case_aux c "ty_Nat" ].
+  [ Case_aux c "ty_arrow"
+  | Case_aux c "ty_prod" | Case_aux c "ty_sum"
+  | Case_aux c "ty_Nat" ].
 (*  [ Case_aux c "ty_arrow"
   | Case_aux c "ty_prod" | Case_aux c "ty_sum"
   | Case_aux c "ty_List" | Case_aux c "ty_Nat" ]. *)
