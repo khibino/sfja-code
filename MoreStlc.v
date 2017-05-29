@@ -2125,7 +2125,6 @@ Proof. unfold test. normalize. Qed.
 
 End Sumtest1.
 
-(*
 Module Sumtest2.
 
 (* let processSum =
@@ -2161,8 +2160,7 @@ Example reduces :
   test ==>* (tm_pair (tm_nat 5) (tm_nat 0)).
 Proof. unfold test. normalize. Qed.
 *)
-(** <<
-(*
+
 Example typechecks :
   has_type (@empty ty) test (ty_prod ty_Nat ty_Nat).
 Proof. unfold test. eauto 15. Qed.
@@ -2170,11 +2168,8 @@ Proof. unfold test. eauto 15. Qed.
 Example reduces :
   test ==>* (tm_pair (tm_nat 5) (tm_nat 0)).
 Proof. unfold test. normalize. Qed.
-*)
->> *)
 
 End Sumtest2.
- *)
 
 (* *** Lists *)
 (** *** リスト *)
