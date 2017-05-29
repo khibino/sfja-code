@@ -2545,7 +2545,7 @@ Proof with eauto.
     (* もし [T_Abs] が最後の規則ならば、[t = tm_abs x T11 t12] となるが、
        これは値である。 *)
 >> *)
-    left...
+    now left...
   Case "T_App".
     (* If the last rule applied was T_App, then [t = t1 t2], and we know
        from the form of the rule that
@@ -2601,11 +2601,11 @@ Proof with eauto.
     right. destruct (IHHt eq_refl) as [ V | [t'] ]...
     SCase "t is value".
       inversion V; subst; try solve by inversion.
-      exists v2...
+      now exists v2...
   Case "T_Inl".
-    destruct (IHHt eq_refl) as [ V | [ ] ]...
+    destruct (IHHt eq_refl) as [ V | [ ] ]; now eauto.
   Case "T_Inr".
-    destruct (IHHt eq_refl) as [ V | [ ] ]...
+    destruct (IHHt eq_refl) as [ V | [ ] ]; now eauto.
   Case "T_Case".
     right.
     destruct (IHHt1 eq_refl) as [ V | [ t0' ] ].
@@ -2625,21 +2625,18 @@ Proof with eauto.
     right. now eauto.
   Case "T_Lcase".
     right.
-    destruct (IHHt1 eq_refl) as [ VH | [ t1' ] ].
-    inversion Ht1; inversion VH; subst; try solve by inversion.
-    now eauto.
-    now eauto.
-    now eauto.
+    destruct (IHHt1 eq_refl) as [ VH | [ t1' ] ]; try now eauto.
+    inversion Ht1; inversion VH; subst; try solve by inversion; now eauto.
   Case "T_Nat".
-   left...
+   now left...
   Case "T_Succ".
     right.
-    destruct (IHHt eq_refl) as [ V | [ ] ]...
+    destruct (IHHt eq_refl) as [ V | [ ] ]; try now eauto.
     SCase "t1 is value".
       inversion V; subst; eauto ; solve by inversion.
   Case "T_Pred".
     right.
-    destruct (IHHt eq_refl) as [ V | [ ] ]...
+    destruct (IHHt eq_refl) as [ V | [ ] ]; try now eauto.
     SCase "t1 is value".
       inversion V as [ | [ | n' ] | | | | | ]
       ; subst; eauto; solve by inversion.
@@ -2661,7 +2658,7 @@ Proof with eauto.
       ; subst; eauto; solve by inversion.
   Case "T_Let".
     right.
-    destruct (IHHt1 eq_refl) as [ V1 | [ ] ]...
+    destruct (IHHt1 eq_refl) as [ V1 | [ ] ]; now eauto.
 Qed.
 
 
