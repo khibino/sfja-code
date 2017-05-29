@@ -1708,20 +1708,20 @@ Inductive step : tm -> tm -> Prop :=
          value v1 ->
          t2 ==> t2' ->
          (tm_pair v1 t2) ==> (tm_pair v1 t2')
-  | ST_Fst : forall t1 t1',
+  | ST_Fst1 : forall t1 t1',
          t1 ==> t1' ->
          (tm_fst t1) ==> (tm_fst t1')
-  | ST_Snd : forall t1 t1',
+  | ST_Snd1 : forall t1 t1',
          t1 ==> t1' ->
          (tm_snd t1) ==> (tm_snd t1')
-  | ST_FstVal : forall v1 v2,
+  | ST_FstPair : forall v1 v2,
          (tm_fst (tm_pair v1 v2)) ==> v1
-  | ST_SndVal : forall v1 v2,
+  | ST_SndPair : forall v1 v2,
          (tm_snd (tm_pair v1 v2)) ==> v2
-  | ST_InL : forall t1 t1' T,
+  | ST_Inl : forall t1 t1' T,
          t1 ==> t1' ->
          (tm_inl T t1) ==> (tm_inl T t1')
-  | ST_InR : forall t1 t1' T,
+  | ST_Inr : forall t1 t1' T,
          t1 ==> t1' ->
          (tm_inr T t1) ==> (tm_inr T t1')
   | ST_Case : forall t0 t0' x1 t1 x2 t2,
@@ -1774,7 +1774,7 @@ Tactic Notation "step_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "ST_AppAbs" | Case_aux c "ST_App1" | Case_aux c "ST_App2"
   | Case_aux c "ST_Pair1" | Case_aux c "ST_Pair2"
-  | Case_aux c "ST_InL" | Case_aux c "ST_InR"
+  | Case_aux c "ST_Inl" | Case_aux c "ST_Inr"
   | Case_aux c "ST_Case" | Case_aux c "ST_CaseL" | Case_aux c "ST_CaseR"
   | Case_aux c "ST_SuccNat" | Case_aux c "ST_Succ"
   | Case_aux c "ST_PredNat" | Case_aux c "ST_Pred"
@@ -1821,10 +1821,10 @@ Inductive has_type : context -> tm -> ty -> Prop :=
   | T_Snd : forall T1 T2 Gamma t,
       has_type Gamma t (ty_prod T1 T2) ->
       has_type Gamma (tm_snd t) T2
-  | T_InL : forall T1 T2 Gamma t1,
+  | T_Inl : forall T1 T2 Gamma t1,
       has_type Gamma t1 T1 ->
       has_type Gamma (tm_inl T2 t1) (ty_sum T1 T2)
-  | T_InR : forall T1 T2 Gamma t2,
+  | T_Inr : forall T1 T2 Gamma t2,
       has_type Gamma t2 T2 ->
       has_type Gamma (tm_inr T1 t2) (ty_sum T1 T2)
   | T_Case : forall T1 T2 T12 Gamma t0 x1 t1 x2 t2,
@@ -1861,7 +1861,7 @@ Tactic Notation "has_type_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "T_Var" | Case_aux c "T_Abs" | Case_aux c "T_App"
   | Case_aux c "T_Pair" | Case_aux c "T_Fst" | Case_aux c "T_Snd"
-  | Case_aux c "T_InL" | Case_aux c "T_InR" | Case_aux c "T_Case"
+  | Case_aux c "T_Inl" | Case_aux c "T_Inr" | Case_aux c "T_Case"
   | Case_aux c "T_Nat" | Case_aux c "T_Succ" | Case_aux c "T_Pred"
   | Case_aux c "T_Mult"
   | Case_aux c "T_If0" | Case_aux c "T_Let"
@@ -2578,9 +2578,9 @@ Proof with eauto.
       exists v2...
       solve by inversion.
       solve by inversion.
-  Case "T_InL".
+  Case "T_Inl".
     destruct (IHHt eq_refl) as [ V | [ ] ]...
-  Case "T_InR".
+  Case "T_Inr".
     destruct (IHHt eq_refl) as [ V | [ ] ]...
   Case "T_Case".
     right.
