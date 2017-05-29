@@ -1265,9 +1265,7 @@ Proof.
          ; [ unfold update; rewrite EQ
              ; inversion NU; subst
              ; apply aeval_weakening; assumption
-           | reflexivity]
-         (* id *)
-
+           | reflexivity] (* id *)
        | (* plus *) | (* minus *) | (* mult *) ]
 
      ; (rewrite IHa2_1
