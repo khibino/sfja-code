@@ -1933,7 +1933,11 @@ Definition store_well_typed (ST:store_ty) (st:store) :=
 (** [ST1 |- st] と [ST2 |- st] の両者を成立させる
     記憶[st]および相異なる記憶型付け[ST1]と[ST2]を見つけられますか？ *)
 
-(* FILL IN HERE *)
+(*
+型付けが複数通りある項が無いので、
+そのような st ST1 ST2 の組み合わせは無い?
+ *)
+
 (** [] *)
 
 (* We can now state something closer to the desired preservation
