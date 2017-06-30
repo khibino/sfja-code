@@ -854,8 +854,6 @@ NatArray への代入後に変更が有った場合、
 (* Show how this can lead to a violation of type safety. *)
 (** このことがどのように型安全性の破壊につながるのか示しなさい。 *)
 
-(* FILL IN HERE *)
-
 (*
 一つめの名前で Dereference すると
 Bool の値を Nat として読み取ってしまう。
