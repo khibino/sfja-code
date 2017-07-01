@@ -2779,6 +2779,69 @@ Qed.
 (** チャレンジ問題: 上述の形式化を修正して、ガベージコレクションを考慮したものにしなさい。
     そして、それについて、自分が証明すべきと思う何らかの良い性質を持つことを証明しなさい。 *)
 
+Section GarbageCollection.
+
+Fixpoint copying_gc (ST : store_ty) (st : store) (t : tm) : store_ty * store * (nat -> tm) :=
+  match t with
+  | tm_var _         =>  ([], [], fun _ => t)
+  | tm_app t1 t2     =>
+    match copying_gc ST st t1 with  | (ST1, st1, f1) =>
+      match copying_gc ST st t2 with  | (ST2, st2, f2) =>
+        (ST1 ++ ST2, st1 ++ st2, fun n => tm_app (f1 n) (f2 (length st1 + n)))
+      end
+    end
+  | tm_abs x T t1    =>
+    match copying_gc ST st t1 with (ST', st', f1) =>
+      (ST', st', fun n => tm_abs x T (f1 n))
+    end
+  | tm_nat _         =>  ([], [], fun _ => t)
+  | tm_succ t1       =>
+    match copying_gc ST st t1 with (ST', st', f1) =>
+      (ST', st', fun n => tm_succ (f1 n))
+    end
+  | tm_pred t1       =>
+    match copying_gc ST st t1 with (ST', st', f1) =>
+      (ST', st', fun n => tm_pred (f1 n))
+    end
+  | tm_mult t1 t2    =>
+    match copying_gc ST st t1 with  | (ST1, st1, f1) =>
+      match copying_gc ST st t2 with  | (ST2, st2, f2) =>
+        (ST1 ++ ST2, st1 ++ st2, fun n => tm_mult (f1 n) (f2 (length st1 + n)))
+      end
+    end
+  | tm_if0 t1 t2 t3  =>
+    match copying_gc ST st t1 with  | (ST1, st1, f1) =>
+      match copying_gc ST st t2 with  | (ST2, st2, f2) =>
+        match copying_gc ST st t3 with  | (ST3, st3, f3) =>
+          (ST1 ++ ST2 ++ ST3, st1 ++ st2 ++ st3,
+           fun n => tm_if0 (f1 n) (f2 (length st1 + n)) (f3 (length st1 + length st2 + n)))
+        end
+      end
+    end
+  | tm_unit          =>  ([], [], fun _ => t)
+  | tm_ref t1        =>
+    match copying_gc ST st t1 with (ST', st', t1') =>
+      (ST', st', tm_ref t1')
+    end
+  (*
+  | tm_deref t1      =>
+    match copying_gc ST st t1 with (ST', st', t1') =>
+      (ST', st', tm_deref t1')
+    end
+  | tm_assign t1 t2  =>
+    match copying_gc ST st t1 with  | (ST1, st1, t1') =>
+      match copying_gc ST st t2 with  | (ST2, st2, t2') =>
+        (ST1 ++ ST2, st1 ++ st2, tm_assign t1 t2)
+      end
+    end
+   *)
+  (* | tm_loc l         =>  ([store_ty_lookup l ST], [store_lookup l st], *)
+  | _                =>  ([], [], fun _ => t)
+  end.
+
+
+End GarbageCollection.
+
 (** [] *)
 
 End RefsAndNontermination.
