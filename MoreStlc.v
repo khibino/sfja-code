@@ -2704,6 +2704,23 @@ Inductive appears_free_in : id -> tm -> Prop :=
         y3 <> x ->
         appears_free_in x t3 ->
         appears_free_in x (tm_case t1 y2 t2 y3 t3)
+  | afi_cons1 : forall x t1 t2,
+        appears_free_in x t1 ->
+        appears_free_in x (tm_cons t1 t2)
+  | afi_cons2 : forall x t1 t2,
+        appears_free_in x t2 ->
+        appears_free_in x (tm_cons t1 t2)
+  | afi_lcasem : forall x t1 t2 y31 y32 t3,
+        appears_free_in x t1 ->
+        appears_free_in x (tm_lcase t1 t2 y31 y32 t3)
+  | afi_lcase_nil : forall x t1 t2 y31 y32 t3,
+        appears_free_in x t2 ->
+        appears_free_in x (tm_lcase t1 t2 y31 y32 t3)
+  | afi_lcase_cons : forall x t1 t2 y31 y32 t3,
+        y31 <> x ->
+        y32 <> x ->
+        appears_free_in x t3 ->
+        appears_free_in x (tm_lcase t1 t2 y31 y32 t3)
   | afi_succ : forall x t1,
         appears_free_in x t1 ->
         appears_free_in x (tm_succ t1)
