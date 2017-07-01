@@ -1595,20 +1595,20 @@ Definition context := partial_map ty.
 
 Module CyclicExample0.
 
-Definition Ref0 := Id 0.
-Definition Ref1 := Id 1.
-Definition X := Id 2.
+Definition ref0 := Id 0.
+Definition ref1 := Id 1.
+Definition x := Id 2.
 
 Definition example0 :=
   (tm_app
-     (tm_abs Ref0 (ty_Ref (ty_arrow ty_Nat ty_Nat))
+     (tm_abs ref0 (ty_Ref (ty_arrow ty_Nat ty_Nat))
              (tm_app
-                (tm_abs Ref1 (ty_arrow ty_Nat ty_Nat)
+                (tm_abs ref1 (ty_arrow ty_Nat ty_Nat)
                         (tm_assign
-                           (tm_var Ref0)
-                           (tm_abs X ty_Nat (tm_app (tm_deref (tm_var Ref1)) (tm_var X)))))
-                (tm_ref (tm_abs X ty_Nat (tm_app (tm_deref (tm_var Ref0)) (tm_var X))))))
-     (tm_ref (tm_abs X ty_Nat (tm_var X))))
+                           (tm_var ref0)
+                           (tm_abs x ty_Nat (tm_app (tm_deref (tm_var ref1)) (tm_var x)))))
+                (tm_ref (tm_abs x ty_Nat (tm_app (tm_deref (tm_var ref0)) (tm_var x))))))
+     (tm_ref (tm_abs x ty_Nat (tm_var x))))
 .
 
 End CyclicExample0.
