@@ -1934,8 +1934,12 @@ Definition store_well_typed (ST:store_ty) (st:store) :=
     記憶[st]および相異なる記憶型付け[ST1]と[ST2]を見つけられますか？ *)
 
 (*
-型付けが複数通りある項が無いので、
-そのような st ST1 ST2 の組み合わせは無い?
+ST1 = [ ty_Nat -> ty_nat ]
+ST2 = [ ty_Nat -> ty_Unit]
+st  = [ \x -> !(loc 0) x ]
+
+(\r0 -> r0 := (ref (\x -> |r0 x))) (ref (\x:nat -> 0))   --> ty_Nat -> ty_Nat
+(\r0 -> r0 := (ref (\x -> |r0 x))) (ref (\x:nat -> ()))  --> ty_Nat -> ty_Unit
  *)
 
 (** [] *)
