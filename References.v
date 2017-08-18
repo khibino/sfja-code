@@ -1595,20 +1595,20 @@ Definition context := partial_map ty.
 
 Module CyclicExample0.
 
-Definition Ref0 := Id 0.
-Definition Ref1 := Id 1.
-Definition X := Id 2.
+Definition ref0 := Id 0.
+Definition ref1 := Id 1.
+Definition x := Id 2.
 
 Definition example0 :=
   (tm_app
-     (tm_abs Ref0 (ty_Ref (ty_arrow ty_Nat ty_Nat))
+     (tm_abs ref0 (ty_Ref (ty_arrow ty_Nat ty_Nat))
              (tm_app
-                (tm_abs Ref1 (ty_arrow ty_Nat ty_Nat)
+                (tm_abs ref1 (ty_arrow ty_Nat ty_Nat)
                         (tm_assign
-                           (tm_var Ref0)
-                           (tm_abs X ty_Nat (tm_app (tm_deref (tm_var Ref1)) (tm_var X)))))
-                (tm_ref (tm_abs X ty_Nat (tm_app (tm_deref (tm_var Ref0)) (tm_var X))))))
-     (tm_ref (tm_abs X ty_Nat (tm_var X))))
+                           (tm_var ref0)
+                           (tm_abs x ty_Nat (tm_app (tm_deref (tm_var ref1)) (tm_var x)))))
+                (tm_ref (tm_abs x ty_Nat (tm_app (tm_deref (tm_var ref0)) (tm_var x))))))
+     (tm_ref (tm_abs x ty_Nat (tm_var x))))
 .
 
 End CyclicExample0.
@@ -1934,8 +1934,12 @@ Definition store_well_typed (ST:store_ty) (st:store) :=
     記憶[st]および相異なる記憶型付け[ST1]と[ST2]を見つけられますか？ *)
 
 (*
-型付けが複数通りある項が無いので、
-そのような st ST1 ST2 の組み合わせは無い?
+ST1 = [ ty_Nat -> ty_nat ]
+ST2 = [ ty_Nat -> ty_Unit]
+st  = [ \x -> !(loc 0) x ]
+
+(\r0 -> r0 := (ref (\x -> |r0 x))) (ref (\x:nat -> 0))   --> ty_Nat -> ty_Nat
+(\r0 -> r0 := (ref (\x -> |r0 x))) (ref (\x:nat -> ()))  --> ty_Nat -> ty_Unit
  *)
 
 (** [] *)
