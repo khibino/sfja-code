@@ -2783,6 +2783,95 @@ Qed.
 (** チャレンジ問題: 上述の形式化を修正して、ガベージコレクションを考慮したものにしなさい。
     そして、それについて、自分が証明すべきと思う何らかの良い性質を持つことを証明しなさい。 *)
 
+Section GarbageCollection.
+
+(* Print option. *)
+(* Print Some. *)
+
+Definition marks := list (option nat).
+
+Definition mark_bits := list bool.
+
+(*
+rc0   再帰の深さの限度
+ms    アドレス変換表
+saddr 利用可能アドレス開始位置を再帰的に渡す
+ *)
+
+Fixpoint
+  copying_gc
+  (rd0 : nat)
+  (ms : marks) (saddr : nat) (ST : store_ty) (st : store) (t : tm) :
+  marks * store_ty * store * tm :=
+  match rd0 with
+    | O     =>  (ms, [], [], t)
+    | S rd  =>
+      match t with
+        | tm_var _         =>  (ms, [], [], t)
+        | tm_app t1 t2     =>
+          let '(ms1, DST1, dst1, t1') :=
+              copying_gc rd ms                 saddr  ST st t1 in
+          let '(ms2, DST2, dst2, t2') :=
+              copying_gc rd ms1 (length dst1 + saddr) ST st t2 in
+          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_app t1 t2)
+        | tm_abs x T t1    =>
+          let '(ms', DST, dst, t1') := copying_gc rd ms saddr ST st t1 in
+          (ms', DST, dst, tm_abs x T t1')
+        | tm_nat _         =>
+          ([], [], [], t)
+        | tm_succ t1       =>
+          let '(ms', DST, dst, t1') := copying_gc rd ms saddr ST st t1 in
+          (ms', DST, dst, tm_succ t1')
+        | tm_pred t1       =>
+          let '(ms', DST, dst, t1') := copying_gc rd ms saddr ST st t1 in
+          (ms', DST, dst, tm_pred t1')
+        | tm_mult t1 t2    =>
+          let '(ms1, DST1, dst1, t1') :=
+              copying_gc rd ms                 saddr  ST st t1 in
+          let '(ms2, DST2, dst2, t2') :=
+              copying_gc rd ms1 (length dst1 + saddr) ST st t2 in
+          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_mult t1 t2)
+        | tm_if0 t1 t2 t3  =>
+          let '(ms1, DST1, dst1, t1') :=
+              copying_gc rd ms                               saddr  ST st t1 in
+          let '(ms2, DST2, dst2, t2') :=
+              copying_gc rd ms1               (length dst1 + saddr) ST st t2 in
+          let '(ms3, DST3, dst3, t3') :=
+              copying_gc rd ms2 (length dst2 + length dst1 + saddr) ST st t3 in
+          (ms3, DST1 ++ DST2 ++ DST3, dst1 ++ dst2 ++ dst3, tm_if0 t1' t2' t3')
+        | tm_unit          =>  (ms, [], [], t)
+        | tm_ref t1        =>
+          let '(ms', DST, dst, t1') := copying_gc rd ms saddr ST st t1 in
+          (ms', DST, dst, tm_ref t1')
+        | tm_deref t1      =>
+          let '(ms', DST, dst, t1') := copying_gc rd ms saddr ST st t1 in
+          (ms, DST, dst, tm_deref t1')
+
+        | tm_assign t1 t2  =>
+          let '(ms1, DST1, dst1, t1') :=
+              copying_gc rd ms                 saddr  ST st t1 in
+          let '(ms2, DST2, dst2, t2') :=
+              copying_gc rd ms1 (length dst1 + saddr) ST st t2 in
+          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_assign t1 t2)
+        | tm_loc l        =>
+          match nth l ms (Some 0) with
+            | None           =>
+              let '(ms1, DST, dst, t1) :=
+                  copying_gc
+                    rd
+                    (replace l (Some saddr) ms)
+                    (S saddr) ST st
+                    (store_lookup l st)
+              in  (ms1, store_ty_lookup l ST :: DST, t1 :: dst, tm_loc saddr)
+            | Some l1        =>  (ms, [], [], tm_loc l1)
+          end
+        (* | _               =>  (ms, [], [], tm_unit) *)
+      end
+  end.
+
+
+End GarbageCollection.
+
 (** [] *)
 
 End RefsAndNontermination.
