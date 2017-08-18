@@ -2801,6 +2801,77 @@ saddr 利用可能アドレス開始位置を再帰的に渡す
 Fixpoint
   copying_gc
   (rd0 : nat)
+  (ms : marks) (saddr : nat) (st : store) (t : tm) :
+  marks * store * tm :=
+  match rd0 with
+    | O     =>  (ms, [], t)
+    | S rd  =>
+      match t with
+        | tm_var _         =>  (ms, [], t)
+        | tm_app t1 t2     =>
+          let '(ms1, dst1, t1') :=
+              copying_gc rd ms                 saddr  st t1 in
+          let '(ms2, dst2, t2') :=
+              copying_gc rd ms1 (length dst1 + saddr) st t2 in
+          (ms2, dst1 ++ dst2, tm_app t1 t2)
+        | tm_abs x T t1    =>
+          let '(ms', dst, t1') := copying_gc rd ms saddr st t1 in
+          (ms', dst, tm_abs x T t1')
+        | tm_nat _         =>
+          (ms, [], t)
+        | tm_succ t1       =>
+          let '(ms', dst, t1') := copying_gc rd ms saddr st t1 in
+          (ms', dst, tm_succ t1')
+        | tm_pred t1       =>
+          let '(ms', dst, t1') := copying_gc rd ms saddr st t1 in
+          (ms', dst, tm_pred t1')
+        | tm_mult t1 t2    =>
+          let '(ms1, dst1, t1') :=
+              copying_gc rd ms                 saddr  st t1 in
+          let '(ms2, dst2, t2') :=
+              copying_gc rd ms1 (length dst1 + saddr) st t2 in
+          (ms2, dst1 ++ dst2, tm_mult t1 t2)
+        | tm_if0 t1 t2 t3  =>
+          let '(ms1, dst1, t1') :=
+              copying_gc rd ms                               saddr  st t1 in
+          let '(ms2, dst2, t2') :=
+              copying_gc rd ms1               (length dst1 + saddr) st t2 in
+          let '(ms3, dst3, t3') :=
+              copying_gc rd ms2 (length dst2 + length dst1 + saddr) st t3 in
+          (ms3, dst1 ++ dst2 ++ dst3, tm_if0 t1' t2' t3')
+        | tm_unit          =>  (ms, [], t)
+        | tm_ref t1        =>
+          let '(ms', dst, t1') := copying_gc rd ms saddr st t1 in
+          (ms', dst, tm_ref t1')
+        | tm_deref t1      =>
+          let '(ms', dst, t1') := copying_gc rd ms saddr st t1 in
+          (ms, dst, tm_deref t1')
+        | tm_assign t1 t2  =>
+          let '(ms1, dst1, t1') :=
+              copying_gc rd ms                 saddr  st t1 in
+          let '(ms2, dst2, t2') :=
+              copying_gc rd ms1 (length dst1 + saddr) st t2 in
+          (ms2, dst1 ++ dst2, tm_assign t1 t2)
+        | tm_loc l        =>
+          match nth l ms (Some 0) with
+            | None           =>
+              let '(ms1, dst, t1) :=
+                  copying_gc
+                    rd
+                    (replace l (Some saddr) ms)
+                    (S saddr) st
+                    (store_lookup l st)
+              in  (ms1, t1 :: dst, tm_loc saddr)
+            | Some l1        =>  (ms, [], tm_loc l1)
+          end
+        (* | _               =>  (ms, [], tm_unit) *)
+      end
+  end.
+
+(*
+Fixpoint
+  copying_gc
+  (rd0 : nat)
   (ms : marks) (saddr : nat) (ST : store_ty) (st : store) (t : tm) :
   marks * store_ty * store * tm :=
   match rd0 with
@@ -2868,7 +2939,7 @@ Fixpoint
         (* | _               =>  (ms, [], [], tm_unit) *)
       end
   end.
-
+ *)
 
 End GarbageCollection.
 
