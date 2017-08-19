@@ -2990,12 +2990,53 @@ Fixpoint
       end
   end.
 
-(*
-Definition gc_preserve_result :
-  (st0 : store) (t0 : tm)
-                (* let '(ms1, st1, t1) := copying_gc st0 t0 in *)
-  ()
- *)
+Reserved Notation "t1 '//' ms '=>>' t2"
+  (at level 45, ms at level 44).
+
+Inductive gc_compacted : tm -> marks -> tm -> Prop :=
+  | Ceq_var    : forall x ms, tm_var x // ms =>> tm_var x
+  | Ceq_app    : forall t1 t2 ms t1' t2',
+                   t1 // ms =>> t1' ->
+                   t2 // ms =>> t2' ->
+                   tm_app t1 t2 // ms =>> tm_app t1' t2'
+  | Ceq_abs    : forall x T t1 ms t1',
+                   t1 // ms =>> t1' ->
+                   tm_abs x T t1 // ms =>> tm_abs x T t1'
+  | Ceq_nat    : forall n ms, tm_nat n // ms =>> tm_nat n
+  | Ceq_succ   : forall t1 ms t1',
+                   t1 // ms =>> t1' ->
+                   tm_succ t1 // ms =>> tm_succ t1'
+  | Ceq_pred   : forall t1 ms t1',
+                   t1 // ms =>> t1' ->
+                   tm_pred t1 // ms =>> tm_pred t1'
+  | Ceq_mult   : forall t1 t2 ms t1' t2',
+                   t1 // ms =>> t1' ->
+                   t2 // ms =>> t2' ->
+                   tm_mult t1 t2 // ms =>> tm_mult t1' t2'
+  | Ceq_if0    : forall t1 t2 t3 ms t1' t2' t3',
+                   t1 // ms =>> t1' ->
+                   t2 // ms =>> t2' ->
+                   t3 // ms =>> t3' ->
+                   tm_if0 t1 t2 t3 // ms =>> tm_if0 t1' t2' t3'
+  | Ceq_unit   : forall ms, tm_unit // ms =>> tm_unit
+  | Ceq_ref    : forall t1 ms t1',
+                   t1 // ms =>> t1' ->
+                   tm_ref t1 // ms =>> tm_ref t1'
+  | Ceq_deref  : forall t1 ms t1',
+                   t1 // ms =>> t1' ->
+                   tm_deref t1 // ms =>> tm_deref t1'
+  | Ceq_assign : forall t1 t2 ms t1' t2',
+                   t1 // ms =>> t1' ->
+                   t2 // ms =>> t2' ->
+                   tm_assign t1 t2 // ms =>> tm_assign t1' t2'
+  | Ceq_loc    : forall n ms m, nth n ms (Some 0) = Some m -> tm_loc n // ms =>> tm_loc m
+
+where "t1 '//' ms '=>>' t2" := (gc_compacted t1 ms t2).
+
+Theorem copying_gc_compaction (st0 : store) (t0 : tm) :
+  let '(ms1, st1, t1) := copying_gc st0 t0 in t0 // ms1 =>> t1.
+Proof.
+  admit.
 
 End GarbageCollection.
 
