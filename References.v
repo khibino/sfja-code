@@ -2857,9 +2857,9 @@ Fixpoint
         | tm_var _         =>  (ms, [], t)
         | tm_app t1 t2     =>
           let '(ms1, dst1, t1') :=
-              copying_gc_sa rd ms                 saddr  st t1 in
+              copying_gc_sa rd ms   saddr                st t1 in
           let '(ms2, dst2, t2') :=
-              copying_gc_sa rd ms1 (length dst1 + saddr) st t2 in
+              copying_gc_sa rd ms1 (saddr + length dst1) st t2 in
           (ms2, dst1 ++ dst2, tm_app t1' t2')
         | tm_abs x T t1    =>
           let '(ms', dst, t1') := copying_gc_sa rd ms saddr st t1 in
@@ -2874,17 +2874,17 @@ Fixpoint
           (ms', dst, tm_pred t1')
         | tm_mult t1 t2    =>
           let '(ms1, dst1, t1') :=
-              copying_gc_sa rd ms                 saddr  st t1 in
+              copying_gc_sa rd ms   saddr                st t1 in
           let '(ms2, dst2, t2') :=
-              copying_gc_sa rd ms1 (length dst1 + saddr) st t2 in
+              copying_gc_sa rd ms1 (saddr + length dst1) st t2 in
           (ms2, dst1 ++ dst2, tm_mult t1' t2')
         | tm_if0 t1 t2 t3  =>
           let '(ms1, dst1, t1') :=
-              copying_gc_sa rd ms                               saddr  st t1 in
+              copying_gc_sa rd ms   saddr                              st t1 in
           let '(ms2, dst2, t2') :=
-              copying_gc_sa rd ms1               (length dst1 + saddr) st t2 in
+              copying_gc_sa rd ms1 (saddr + length dst1)               st t2 in
           let '(ms3, dst3, t3') :=
-              copying_gc_sa rd ms2 (length dst2 + length dst1 + saddr) st t3 in
+              copying_gc_sa rd ms2 (saddr + length dst1 + length dst2) st t3 in
           (ms3, dst1 ++ dst2 ++ dst3, tm_if0 t1' t2' t3')
         | tm_unit          =>  (ms, [], t)
         | tm_ref t1        =>
@@ -2895,9 +2895,9 @@ Fixpoint
           (ms, dst, tm_deref t1')
         | tm_assign t1 t2  =>
           let '(ms1, dst1, t1') :=
-              copying_gc_sa rd ms                 saddr  st t1 in
+              copying_gc_sa rd ms   saddr                st t1 in
           let '(ms2, dst2, t2') :=
-              copying_gc_sa rd ms1 (length dst1 + saddr) st t2 in
+              copying_gc_sa rd ms1 (saddr + length dst1) st t2 in
           (ms2, dst1 ++ dst2, tm_assign t1' t2')
         | tm_loc l        =>
           match nth l ms (Some 0) with
@@ -2931,9 +2931,9 @@ Fixpoint
         | tm_var _         =>  (ms, [], [], t)
         | tm_app t1 t2     =>
           let '(ms1, DST1, dst1, t1') :=
-              copying_gc_ty_sa rd ms                 saddr  ST st t1 in
+              copying_gc_ty_sa rd ms   saddr                ST st t1 in
           let '(ms2, DST2, dst2, t2') :=
-              copying_gc_ty_sa rd ms1 (length dst1 + saddr) ST st t2 in
+              copying_gc_ty_sa rd ms1 (saddr + length dst1) ST st t2 in
           (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_app t1' t2')
         | tm_abs x T t1    =>
           let '(ms', DST, dst, t1') := copying_gc_ty_sa rd ms saddr ST st t1 in
@@ -2948,17 +2948,17 @@ Fixpoint
           (ms', DST, dst, tm_pred t1')
         | tm_mult t1 t2    =>
           let '(ms1, DST1, dst1, t1') :=
-              copying_gc_ty_sa rd ms                 saddr  ST st t1 in
+              copying_gc_ty_sa rd ms   saddr                ST st t1 in
           let '(ms2, DST2, dst2, t2') :=
-              copying_gc_ty_sa rd ms1 (length dst1 + saddr) ST st t2 in
+              copying_gc_ty_sa rd ms1 (saddr + length dst1) ST st t2 in
           (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_mult t1' t2')
         | tm_if0 t1 t2 t3  =>
           let '(ms1, DST1, dst1, t1') :=
-              copying_gc_ty_sa rd ms                               saddr  ST st t1 in
+              copying_gc_ty_sa rd ms   saddr                              ST st t1 in
           let '(ms2, DST2, dst2, t2') :=
-              copying_gc_ty_sa rd ms1               (length dst1 + saddr) ST st t2 in
+              copying_gc_ty_sa rd ms1 (saddr + length dst1)               ST st t2 in
           let '(ms3, DST3, dst3, t3') :=
-              copying_gc_ty_sa rd ms2 (length dst2 + length dst1 + saddr) ST st t3 in
+              copying_gc_ty_sa rd ms2 (saddr + length dst1 + length dst2) ST st t3 in
           (ms3, DST1 ++ DST2 ++ DST3, dst1 ++ dst2 ++ dst3, tm_if0 t1' t2' t3')
         | tm_unit          =>  (ms, [], [], t)
         | tm_ref t1        =>
@@ -2970,9 +2970,9 @@ Fixpoint
 
         | tm_assign t1 t2  =>
           let '(ms1, DST1, dst1, t1') :=
-              copying_gc_ty_sa rd ms                 saddr  ST st t1 in
+              copying_gc_ty_sa rd ms   saddr                ST st t1 in
           let '(ms2, DST2, dst2, t2') :=
-              copying_gc_ty_sa rd ms1 (length dst1 + saddr) ST st t2 in
+              copying_gc_ty_sa rd ms1 (saddr + length dst1) ST st t2 in
           (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_assign t1' t2')
         | tm_loc l        =>
           match nth l ms (Some 0) with
