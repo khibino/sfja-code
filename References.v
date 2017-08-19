@@ -2860,7 +2860,7 @@ Fixpoint
               copying_gc_sa rd ms                 saddr  st t1 in
           let '(ms2, dst2, t2') :=
               copying_gc_sa rd ms1 (length dst1 + saddr) st t2 in
-          (ms2, dst1 ++ dst2, tm_app t1 t2)
+          (ms2, dst1 ++ dst2, tm_app t1' t2')
         | tm_abs x T t1    =>
           let '(ms', dst, t1') := copying_gc_sa rd ms saddr st t1 in
           (ms', dst, tm_abs x T t1')
@@ -2877,7 +2877,7 @@ Fixpoint
               copying_gc_sa rd ms                 saddr  st t1 in
           let '(ms2, dst2, t2') :=
               copying_gc_sa rd ms1 (length dst1 + saddr) st t2 in
-          (ms2, dst1 ++ dst2, tm_mult t1 t2)
+          (ms2, dst1 ++ dst2, tm_mult t1' t2')
         | tm_if0 t1 t2 t3  =>
           let '(ms1, dst1, t1') :=
               copying_gc_sa rd ms                               saddr  st t1 in
@@ -2898,7 +2898,7 @@ Fixpoint
               copying_gc_sa rd ms                 saddr  st t1 in
           let '(ms2, dst2, t2') :=
               copying_gc_sa rd ms1 (length dst1 + saddr) st t2 in
-          (ms2, dst1 ++ dst2, tm_assign t1 t2)
+          (ms2, dst1 ++ dst2, tm_assign t1' t2')
         | tm_loc l        =>
           match nth l ms (Some 0) with
             | None           =>
@@ -2934,7 +2934,7 @@ Fixpoint
               copying_gc_ty_sa rd ms                 saddr  ST st t1 in
           let '(ms2, DST2, dst2, t2') :=
               copying_gc_ty_sa rd ms1 (length dst1 + saddr) ST st t2 in
-          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_app t1 t2)
+          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_app t1' t2')
         | tm_abs x T t1    =>
           let '(ms', DST, dst, t1') := copying_gc_ty_sa rd ms saddr ST st t1 in
           (ms', DST, dst, tm_abs x T t1')
@@ -2951,7 +2951,7 @@ Fixpoint
               copying_gc_ty_sa rd ms                 saddr  ST st t1 in
           let '(ms2, DST2, dst2, t2') :=
               copying_gc_ty_sa rd ms1 (length dst1 + saddr) ST st t2 in
-          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_mult t1 t2)
+          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_mult t1' t2')
         | tm_if0 t1 t2 t3  =>
           let '(ms1, DST1, dst1, t1') :=
               copying_gc_ty_sa rd ms                               saddr  ST st t1 in
@@ -2973,7 +2973,7 @@ Fixpoint
               copying_gc_ty_sa rd ms                 saddr  ST st t1 in
           let '(ms2, DST2, dst2, t2') :=
               copying_gc_ty_sa rd ms1 (length dst1 + saddr) ST st t2 in
-          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_assign t1 t2)
+          (ms2, DST1 ++ DST2, dst1 ++ dst2, tm_assign t1' t2')
         | tm_loc l        =>
           match nth l ms (Some 0) with
             | None           =>
@@ -3033,9 +3033,18 @@ Inductive gc_compacted : tm -> marks -> tm -> Prop :=
 
 where "t1 '//' ms '=>>' t2" := (gc_compacted t1 ms t2).
 
-Theorem copying_gc_compaction (st0 : store) (t0 : tm) :
-  let '(ms1, st1, t1) := copying_gc st0 t0 in t0 // ms1 =>> t1.
+Theorem copying_gc_compaction (st : store) (t : tm) :
+  let '(ms, _, t') := copying_gc st t in t // ms =>> t'.
 Proof.
+  (*
+  induction t; simpl; try constructor.
+  unfold copying_gc.
+  unfold copying_gc_sa.
+  simpl.
+  fold copying_gc_sa.
+
+   *)
+
   admit.
 
 End GarbageCollection.
