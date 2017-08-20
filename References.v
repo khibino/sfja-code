@@ -2845,6 +2845,79 @@ Fixpoint gc_tm_size (t : tm) : nat :=
     (* | _                =>  0 *)
   end.
 
+(*
+Fixpoint
+  copying_gc_sa_n
+  (ms : marks) (saddr : nat) (st : store) (p : nat * tm) :
+  marks * store * tm :=
+  let (rd, t) := p in
+  match t with
+    | tm_var _         =>  (ms, [], t)
+    (*
+    | tm_app t1 t2     =>
+      let '(ms1, dst1, t1') :=
+          copying_gc_sa_n ms   saddr                st (rd, t1) in
+      let '(ms2, dst2, t2') :=
+          copying_gc_sa_n ms1 (saddr + length dst1) st (rd, t2) in
+      (ms2, dst1 ++ dst2, tm_app t1' t2')
+    | tm_abs x T t1    =>
+      let '(ms', dst, t1') := copying_gc_sa_n rd ms saddr st t1 in
+      (ms', dst, tm_abs x T t1')
+    | tm_nat _         =>
+      (ms, [], t)
+    | tm_succ t1       =>
+      let '(ms', dst, t1') := copying_gc_sa_n rd ms saddr st t1 in
+      (ms', dst, tm_succ t1')
+    | tm_pred t1       =>
+      let '(ms', dst, t1') := copying_gc_sa_n rd ms saddr st t1 in
+      (ms', dst, tm_pred t1')
+    | tm_mult t1 t2    =>
+      let '(ms1, dst1, t1') :=
+          copying_gc_sa_n rd ms   saddr                st t1 in
+      let '(ms2, dst2, t2') :=
+          copying_gc_sa_n rd ms1 (saddr + length dst1) st t2 in
+      (ms2, dst1 ++ dst2, tm_mult t1' t2')
+    | tm_if0 t1 t2 t3  =>
+      let '(ms1, dst1, t1') :=
+          copying_gc_sa_n rd ms   saddr                              st t1 in
+      let '(ms2, dst2, t2') :=
+          copying_gc_sa_n rd ms1 (saddr + length dst1)               st t2 in
+      let '(ms3, dst3, t3') :=
+          copying_gc_sa_n rd ms2 (saddr + length dst1 + length dst2) st t3 in
+      (ms3, dst1 ++ dst2 ++ dst3, tm_if0 t1' t2' t3')
+    | tm_unit          =>  (ms, [], t)
+    | tm_ref t1        =>
+      let '(ms', dst, t1') := copying_gc_sa_n rd ms saddr st t1 in
+      (ms', dst, tm_ref t1')
+    | tm_deref t1      =>
+      let '(ms', dst, t1') := copying_gc_sa_n rd ms saddr st t1 in
+      (ms, dst, tm_deref t1')
+    | tm_assign t1 t2  =>
+      let '(ms1, dst1, t1') :=
+          copying_gc_sa_n rd ms   saddr                st t1 in
+      let '(ms2, dst2, t2') :=
+          copying_gc_sa_n rd ms1 (saddr + length dst1) st t2 in
+      (ms2, dst1 ++ dst2, tm_assign t1' t2')
+     *)
+    | tm_loc l        =>
+      match nth l ms (Some 0) with
+        | None           =>
+          match rd with
+            | O             =>  (ms, [], t)
+            | S rd'         =>
+              let '(ms1, dst, t1) :=
+                  copying_gc_sa_n
+                    (replace l (Some saddr) ms)
+                    (S saddr) st
+                    (rd', store_lookup l st)
+              in  (ms1, t1 :: dst, tm_loc saddr)
+          end
+        | Some l1        =>  (ms, [], tm_loc l1)
+      end
+         | _               =>  (ms, [], tm_unit)
+  end.
+ *)
+
 Fixpoint
   copying_gc_sa
   (rd0 : nat)
