@@ -1662,9 +1662,9 @@ Fixpoint subst (x:id) (s:tm) (t:tm) : tm :=
       (subst x s t0)
       (subst x s t1)
       y1 y2 (if beq_id x y1
-             then t1
+             then t2
              else (if beq_id x y2
-                   then t1
+                   then t2
                    else (subst x s t2)))
   | tm_nat n => t
   | tm_succ t1 => tm_succ (subst x s t1)
@@ -3024,7 +3024,30 @@ Proof with eauto.
           rewrite (beq_id_eq y2 x0) in Heqe...
           rewrite (beq_id_eq x x0)  in Heqe...
           now apply (beq_id_false_not_eq x0 x0)... }
-  (* - Case "tm_lcase". *)
+
+  - Case "tm_lcase".
+    admit.
+    (*
+    rename i into xh. rename i0 into xt. rename S into T.
+    apply T_Lcase with T1.
+    + now apply IHt1...
+    + now apply IHt2...
+    + remember (beq_id x xh) as e1.
+      destruct e1.
+      * SCase "x = y1".
+        eapply context_invariance...
+        intros x0 afiH.
+        rewrite <- (beq_id_eq x xh)...
+        unfold extend.
+        remember (beq_id x x0) as ex.
+        remember (beq_id xt x0) as ey2.
+        destruct ex.
+        (* { destruct ey2. admit. } *)
+        (* {  } *)
+        { admit. }
+        { admit. }
+      * admit.
+     *)
 
   - Case "tm_let".
     rename i into y. rename S into T2.
@@ -3113,6 +3136,9 @@ Proof with eauto.
     apply substitution_preserves_typing with T1...
     inversion HT1; subst...
     apply substitution_preserves_typing with T2...
+  Case "T_Lcase".
+    admit.
+
   Case "T_Let".
     inversion HE; subst...
     SCase "ST_LetValue".
