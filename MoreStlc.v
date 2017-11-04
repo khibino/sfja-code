@@ -1871,6 +1871,7 @@ Inductive has_type : context -> tm -> ty -> Prop :=
   | T_Lcase : forall T1 T Gamma t1 t2 xh xt t3,
       has_type Gamma t1 (ty_List T1) ->
       has_type Gamma t2 T ->
+      xh <> xt ->
       has_type (extend (extend Gamma xh T1) xt (ty_List T1)) t3 T ->
       has_type Gamma (tm_lcase t1 t2 xh xt t3) T
   | T_Nat : forall Gamma n,
@@ -2833,8 +2834,8 @@ Proof with eauto.
     exists T'.
     rewrite extend_neq in EH.
     rewrite extend_neq in EH...
-    apply not_eq_beq_id_false in H3...
-    now apply not_eq_beq_id_false in H6...
+    apply not_eq_beq_id_false in H4...
+    now apply not_eq_beq_id_false in H7...
   Case "T_Let".
     unfold extend in IHHtyp2.
     destruct IHHtyp2 as [ Tx ] ...
@@ -3032,21 +3033,28 @@ Proof with eauto.
     apply T_Lcase with T1.
     + now apply IHt1...
     + now apply IHt2...
-    + remember (beq_id x xh) as e1.
-      destruct e1.
-      * SCase "x = y1".
+    + remember (beq_id x xh) as eh.
+      destruct eh.
+      * SCase "x = xt".
         eapply context_invariance...
         intros x0 afiH.
         rewrite <- (beq_id_eq x xh)...
         unfold extend.
         remember (beq_id x x0) as ex.
-        remember (beq_id xt x0) as ey2.
-        destruct ex.
-        (* { destruct ey2. admit. } *)
-        (* {  } *)
-        { admit. }
-        { admit. }
-      * admit.
+        destruct ex; reflexivity.
+      * SCase "x <> xt".
+        remember (beq_id x xt) as et.
+        destruct et.
+        { eapply context_invariance...
+          intros x0 afiH.
+          rewrite <- (beq_id_eq x xt)...
+          unfold extend.
+          remember (beq_id x x0) as ex.
+          destruct ex; reflexivity. }
+        { apply IHt3.
+          eapply context_invariance...
+          intros x0 afiH.
+        }
      *)
 
   - Case "tm_let".
