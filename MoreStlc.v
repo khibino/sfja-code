@@ -3027,12 +3027,11 @@ Proof with eauto.
           now apply (beq_id_false_not_eq x0 x0)... }
 
   - Case "tm_lcase".
-    admit.
-    (*
     rename i into xh. rename i0 into xt. rename S into T.
     apply T_Lcase with T1.
     + now apply IHt1...
     + now apply IHt2...
+    + assumption.
     + remember (beq_id x xh) as eh.
       destruct eh.
       * SCase "x = xt".
@@ -3054,8 +3053,27 @@ Proof with eauto.
         { apply IHt3.
           eapply context_invariance...
           intros x0 afiH.
-        }
-     *)
+          unfold extend.
+          remember (beq_id x x0) as ex.
+          remember (beq_id xt x0) as et.
+          destruct et.
+          - destruct ex.
+            + rewrite -> (beq_id_eq x x0 Heqex) in Heqet.
+              rewrite <- (beq_id_eq xt x0 Heqet0) in Heqet.
+              rewrite <- beq_id_refl in Heqet.
+              now inversion Heqet.
+            + reflexivity.
+          - remember (beq_id xh x0) as eh.
+            destruct eh.
+            + destruct ex.
+              * rewrite -> (beq_id_eq x x0 Heqex) in Heqeh.
+                rewrite -> (beq_id_eq xh x0 Heqeh0) in Heqeh.
+                rewrite <- beq_id_refl in Heqeh.
+                now inversion Heqeh.
+              * reflexivity.
+            + destruct ex.
+              * reflexivity.
+              * reflexivity. }
 
   - Case "tm_let".
     rename i into y. rename S into T2.
