@@ -1657,13 +1657,13 @@ Fixpoint subst (x:id) (s:tm) (t:tm) : tm :=
       x2 (if beq_id x x2 then t2 else subst x s t2)
   | tm_nil T => t
   | tm_cons t1 t2 => tm_cons (subst x s t1) (subst x s t2)
-  | tm_lcase t0 t1 y1 y2 t2 =>
+  | tm_lcase t0 t1 xh xt t2 =>
     tm_lcase
       (subst x s t0)
       (subst x s t1)
-      y1 y2 (if beq_id x y1
+      xh xt (if beq_id x xh
              then t2
-             else (if beq_id x y2
+             else (if beq_id x xt
                    then t2
                    else (subst x s t2)))
   | tm_nat n => t
