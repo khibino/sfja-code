@@ -3066,8 +3066,8 @@ Proof with eauto.
           - remember (beq_id xh x0) as eh.
             destruct eh.
             + destruct ex.
-              * rewrite -> (beq_id_eq x x0 Heqex) in Heqeh.
-                rewrite -> (beq_id_eq xh x0 Heqeh0) in Heqeh.
+              * rewrite -> (beq_id_eq x x0) in Heqeh...
+                rewrite -> (beq_id_eq xh x0) in Heqeh...
                 rewrite <- beq_id_refl in Heqeh.
                 now inversion Heqeh.
               * reflexivity.
